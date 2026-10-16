@@ -1,6 +1,6 @@
-/* Black Gold Cat P1.0 — autonomous behavior with frame-rate independent motion blending.
+/* Black Gold Cat P1.1 — autonomous behavior with frame-rate independent motion blending.
    This is an independent character prototype: no MMHVAULT imports or financial data. */
-import {blendPose,newPose,clamp01} from './motion-mixer.js?v=p10';
+import {blendPose,newPose,clamp01} from './motion-mixer.js?v=p11';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const approach=(a,b,t)=>a+(b-a)*clamp01(t);
 const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
@@ -13,7 +13,7 @@ export class CatMind{
   constructor(){
     this.auto=true;this.mode='welcome';this.modeAt=0;this.until=2.8;this.nextAction=9;
     this.pose=newPose('welcome');this.poseTransition='欢迎';
-    this.clipAges=Object.fromEntries(['idle','walk','loaf','inspect','welcome','stretch'].map(a=>[a,0]));
+    this.clipAges=Object.fromEntries(['idle','walk','sit','loaf','inspect','welcome','stretch'].map(a=>[a,0]));
     this.x=0;this.z=0;this.yaw=0;this.faceTarget=0;this.targetX=0;this.targetZ=0;
     this.time=0;this.energy=.65;this.travelLimit=1.15;
     this.gazeX=0;this.gazeY=0;this.gazeUntil=0;
@@ -23,24 +23,39 @@ export class CatMind{
     this.motion=0;this.crouch=0;this.wag=0;this.turnRate=0;
     this.lookAtUser=true;this.lastClick=-Infinity;
     this.walkTargetDistance=0;
+    this.queued=null;this.posture=0;
   }
   select(mode,duration,reason){
+    this.queued=null;
     if(this.mode!==mode) this.clipAges[mode]=0;
     this.mode=mode;this.modeAt=this.time;this.until=this.time+duration;
     this.interaction=reason||this.interaction;
-    this.status=({welcome:'轻轻抬爪打招呼',inspect:'正认真地看着你',walk:'正在慢慢巡视',
+    this.status=({welcome:'轻轻抬爪打招呼',inspect:'正认真地看着你',walk:'正在慢慢巡视',sit:'正在缓缓坐下或起身',
       loaf:'趴下来安静陪伴',stretch:'伸懒腰，准备起身',idle:'在你身边安静陪伴'})[mode]||this.status;
   }
   greet(){this.select('welcome',3,'你向猫咪打招呼了');this.lookAtUser=true;this.gazeUntil=this.time+4;}
   look(){this.select('inspect',3,'猫咪在看着你');this.lookAtUser=true;this.gazeX=0;this.gazeY=0;this.gazeUntil=this.time+4;}
-  rest(){this.select('loaf',7,'猫咪开始休息');this.lookAtUser=false;}
+  rest(){
+    // Sitting is a real transition state, not an instantaneous position swap.
+    if(this.mode!=='loaf' && this.mode!=='sit' && this.pose.loaf<.7){
+      this.select('sit',1.65,'先坐下来，再安静趴卧');
+      this.queued={mode:'loaf',duration:7,reason:'猫咪开始休息'};
+    } else this.select('loaf',7,'猫咪开始休息');
+    this.lookAtUser=false;
+  }
+  sit(){this.select('sit',6,'猫咪坐在身边');this.lookAtUser=true;}
   walk(){
     const direction=Math.random()>.5?1:-1,maxX=this.travelLimit;
     this.targetX=clamp(this.x+direction*(.42+Math.random()*.72),-maxX,maxX);
     this.targetZ=clamp(this.z+(.5-Math.random())*.55,-.35,.30);
     if(Math.abs(this.targetX-this.x)<.2)this.targetX=clamp(this.x-direction*.55,-maxX,maxX);
     this.walkTargetDistance=Math.hypot(this.targetX-this.x,this.targetZ-this.z);
-    this.select('walk',Math.max(5,3+this.walkTargetDistance/.20),'猫咪自己走了几步');this.lookAtUser=false;
+    const duration=Math.max(5,3+this.walkTargetDistance/.20);
+    if(this.pose.loaf>.25 || this.mode==='loaf'){
+      this.select('sit',1.55,'先从趴卧起身，再开始巡视');
+      this.queued={mode:'walk',duration,reason:'猫咪自己走了几步'};
+    }else this.select('walk',duration,'猫咪自己走了几步');
+    this.lookAtUser=false;
   }
   press(x=0,y=0){
     this.gazeX=clamp(x,-1,1);this.gazeY=clamp(y,-1,1);this.gazeUntil=this.time+3;
@@ -50,9 +65,10 @@ export class CatMind{
   }
   autoSelect(){
     const r=Math.random();
-    if(r<.28)this.walk();
-    else if(r<.52)this.select('loaf',5+Math.random()*4,'猫咪想安静趴一会');
-    else if(r<.70)this.select('stretch',2.8,'猫咪伸了个懒腰');
+    if(r<.25)this.walk();
+    else if(r<.47)this.rest();
+    else if(r<.61)this.sit();
+    else if(r<.76)this.select('stretch',2.8,'猫咪伸了个懒腰');
     else this.select('inspect',3,'猫咪好奇地观察你');
     this.nextAction=this.until+2+Math.random()*4;
   }
@@ -64,6 +80,12 @@ export class CatMind{
     this.blink=blinkT>=0&&blinkT<1?Math.sin(blinkT*Math.PI):0;
     // Scheduling uses a single expiry edge rather than re-selecting idle every
     // frame; user-triggered actions remain available with auto disabled.
+    // Complete a scheduled stand -> sit -> loaf, or loaf -> sit -> walk
+    // before running autonomous scheduling. New interactions cancel the queue.
+    if(this.queued && time>=this.until){
+      const q=this.queued;this.select(q.mode,q.duration,q.reason);
+      this.nextAction=Math.max(this.nextAction,this.until+2.5);
+    }
     if(this.auto&&time>=this.until){
       if(time>=this.nextAction)this.autoSelect();
       else if(this.mode!=='idle')this.select('idle',this.nextAction-time,this.interaction);
@@ -88,7 +110,7 @@ export class CatMind{
       }
     }else{
       this.faceTarget=this.mode==='welcome'||this.mode==='inspect'?0:
-        this.mode==='loaf'?.12*Math.sin(time*.2):.12*Math.sin(time*.21);
+        (this.mode==='loaf'||this.mode==='sit')?.12*Math.sin(time*.2):.12*Math.sin(time*.21);
       this.yaw=turn(this.yaw,this.faceTarget,2.0,dt);
     }
     this.turnRate=approach(this.turnRate,clamp(angleDelta(prevYaw,this.yaw)/Math.max(dt,.001),-2,2),1-Math.exp(-dt*7));
@@ -97,6 +119,7 @@ export class CatMind{
     // greeting continuous; loaf crouch follows the pose, not a boolean switch.
     this.pose=blendPose(this.pose,this.mode,dt,{inRate:this.mode==='loaf'?2.25:4.2,outRate:this.mode==='loaf'?2.8:3.5});
     this.crouch=approach(this.crouch,this.pose.loaf,1-Math.exp(-dt*4));
+    this.posture=approach(this.posture,this.pose.sit+this.pose.loaf*.22,1-Math.exp(-dt*3.1));
     const gaitSpeed=this.motion*clamp01(this.pose.walk);
     // Stance distance=.24 units at nominal .49 units/s and stance=.60 cycle.
     // Advancing by travelled distance avoids idle foot cycling / moonwalking.
@@ -110,13 +133,13 @@ export class CatMind{
     this.tail=Math.sin(time*(this.pose.loaf>.65?1.05:1.7))*(.10+.24*(1-this.pose.loaf))+
       this.pose.welcome*.14;
     this.wag=active?Math.sin(time*7.2)*.55:0;
-    this.poseTransition=this.mode==='walk' && Math.abs(this.turnRate)>.7?'正在自然转身':
+    this.poseTransition=this.mode==='sit'?'正缓慢坐下／起身':this.mode==='walk' && Math.abs(this.turnRate)>.7?'正在自然转身':
       this.pose.loaf>.75?'放松趴卧':this.pose.walk>.65?'稳步巡视':
       this.pose.stretch>.5?'伸展身体':this.pose.welcome>.5?'举爪回应':
       this.pose.inspect>.5?'好奇观察':'自然过渡中';
     return this;
   }
-  get label(){return ({welcome:'打招呼',walk:'自主走动',idle:'安静陪伴',loaf:'趴着休息',inspect:'好奇观察',stretch:'伸懒腰'})[this.mode]||'观察中';}
+  get label(){return ({welcome:'打招呼',walk:'自主走动',sit:'缓缓坐下',idle:'安静陪伴',loaf:'趴着休息',inspect:'好奇观察',stretch:'伸懒腰'})[this.mode]||'观察中';}
   get direction(){const d=Math.abs(angleDelta(0,this.yaw));return d<.18?'正面对着你':d<.6?'斜侧面':'转身行走';}
 }
 function smoothMove(angle){

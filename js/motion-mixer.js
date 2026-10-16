@@ -1,7 +1,7 @@
-/* Black Gold Cat P0.9 — dependency-free procedural animation mixer.
+/* Black Gold Cat P1.1 — dependency-free procedural animation mixer.
    Softly interpolates animation intent (NOT imported glTF clips) and calculates
    contact-aware two-beat paw paths. No financial app dependencies. */
-export const ACTIONS=Object.freeze(['idle','walk','loaf','inspect','welcome','stretch']);
+export const ACTIONS=Object.freeze(['idle','walk','sit','loaf','inspect','welcome','stretch']);
 export const clamp01=v=>Math.min(1,Math.max(0,v));
 export const smoothStep=v=>{const t=clamp01(v);return t*t*(3-2*t);};
 const TWO_PI=Math.PI*2;

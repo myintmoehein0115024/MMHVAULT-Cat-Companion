@@ -1,9 +1,10 @@
-/* Black Gold Cat P1.0 — native glTF animation clips blended over GPU-skinned body and tail.
+/* Black Gold Cat P1.1 — native glTF animation clips blended over GPU-skinned body and tail.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
-import {CatRenderer} from './renderer.js?v=p10';
-import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p10';
-import {loadCatGLB} from './glb-loader.js?v=p10';
-import {sampleAnimationLayers} from './clip-player.js?v=p10';
+import {CatRenderer} from './renderer.js?v=p11';
+import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
+import {loadCatGLB} from './glb-loader.js?v=p11';
+import {sampleAnimationLayers} from './clip-player.js?v=p11';
+import {FootPlantCoordinator} from './foot-plant.js?v=p11';
 
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const mul=(a,b)=>{const out=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)out[c*4+r]+=a[k*4+r]*b[c*4+k];return out;};
@@ -50,7 +51,7 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.0 内嵌动画剪辑 GLB';}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.1 坐姿与脚掌接触约束';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
@@ -63,7 +64,7 @@ export class GLBCatRenderer extends CatRenderer{
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
-  this.assetName='P1.0 · '+model.animations.length+'段 GLB 关键帧剪辑 · '+Math.round(model.bytes/1024)+' KB';
+  this.assetName='P1.1 · '+model.animations.length+'段 GLB 动画 + 坐姿 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -72,13 +73,18 @@ export class GLBCatRenderer extends CatRenderer{
   this.draw('ring',combine(T(mind.x,.016,mind.z),S(1.03,1,.78)),'#af8344',.3,.02,0,.52);
   const pose=mind.pose||{idle:0,walk:mind.mode==='walk'?1:0,loaf:mind.mode==='loaf'?1:0,
     inspect:mind.mode==='inspect'?1:0,welcome:mind.mode==='welcome'?1:0,stretch:mind.mode==='stretch'?1:0};
-  const loaf=clamp(mind.crouch||0,0,1),walk=walkBlend(mind),age=time-(mind.modeAt??time);
+  const loaf=clamp(mind.crouch||0,0,1),sitting=clamp(mind.pose?.sit||0,0,1),walk=walkBlend(mind),age=time-(mind.modeAt??time);
   const greet=clamp(pose.welcome*actionPulse(age,2.7),0,1);
   const stretching=clamp(pose.stretch*actionPulse(age,2.8),0,1);
   const breath=.005*Math.sin(time*2.05),bodyBob=.0065*Math.sin(mind.step*2)*walk;
   const curious=clamp(pose.inspect+pose.welcome*.55,0,1);
   const smile=clamp(greet*.95+stretching*.65+curious*.23,0,1);
-  const clipPose=sampleAnimationLayers(this.model.animations,pose,mind.clipAges,mind.step);
+  // Sitting is a procedural transition layered over a quiet idle head/ear clip;
+  // the P1.0 asset still has six authored GLB clips, not a seventh sit clip.
+  const clipPose=sampleAnimationLayers(this.model.animations,{...pose,idle:(pose.idle||0)+sitting*.6},mind.clipAges,mind.step);
+  if(!this.footPlant)this.footPlant=new FootPlantCoordinator();
+  if(walk<.06)this.footPlant.clear();
+  mind.rootBob=bodyBob+breath;
   const legCache=new Map();
   for(const front of [true,false])for(const left of [true,false]){
    const key=(front?'Front':'Back')+(left?'Left':'Right');
@@ -94,17 +100,21 @@ export class GLBCatRenderer extends CatRenderer{
    const phase=mind.step+((front===left)?0:Math.PI);
    const stride=pawCycle(phase);
    const neutralZ=front?.123:.090;
-   const targetY=-.495 + .103*stride.lift*walk+.012*loaf;
-   const targetZ=neutralZ + .118*stride.slide*walk;
-   const ik=solvePawIK(targetY,targetZ,front);
-   const mix=walk*(1-loaf)*(1-old.greeting);
+   const plant=this.footPlant.target(mind,{front,left,walk,phase,neutralZ,
+     targetY:-.495+.103*stride.lift*walk+.012*loaf});
+   const ik=solvePawIK(plant.targetY,plant.targetZ,front);
+   const mix=walk*(1-loaf)*(1-sitting)*(1-old.greeting);
    const lerp=(a,b)=>a*(1-mix)+b*mix;
-   legCache.set(key,{...old,hip:lerp(old.hip,ik.hip),knee:lerp(old.knee,ik.knee),paw:lerp(old.paw,ik.paw)});
+   // Fold hind legs beneath the torso for sitting, keep front legs supported.
+   const hip=lerp(old.hip,ik.hip)+(front?-.16:-.62)*sitting;
+   const knee=lerp(old.knee,ik.knee)+(front?.16:.72)*sitting;
+   const paw=lerp(old.paw,ik.paw)-(hip-lerp(old.hip,ik.hip)+knee-lerp(old.knee,ik.knee))*.66;
+   legCache.set(key,{...old,hip,knee,paw,lateral:plant.lateral*mix});
   }
   const poseFor=node=>{
    const name=node.name;
-   if(name==='CatRoot')return combine(node.base,T(mind.x,-.035+breath+bodyBob,mind.z),RY(mind.yaw),RZ(clamp((mind.turnRate||0)*.014,-.042,.042)),S(1,1-.105*loaf,1));
-   if(name==='HeadPivot')return combine(node.base,RY(.06*Math.sin(time*.47)+mind.gazeX*.105),RX(-mind.gazeY*.065+.022*Math.sin(time*.55)-stretching*.11),RZ(.020*Math.sin(time*.6)));
+   if(name==='CatRoot')return combine(node.base,T(mind.x,-.035+breath+bodyBob,mind.z),RY(mind.yaw),RX(.11*sitting),RZ(clamp((mind.turnRate||0)*.014,-.042,.042)),S(1,1-.105*loaf-.025*sitting,1));
+   if(name==='HeadPivot')return combine(node.base,RY(.06*Math.sin(time*.47)+mind.gazeX*.105),RX(-mind.gazeY*.065+.022*Math.sin(time*.55)-stretching*.11-.04*sitting),RZ(.020*Math.sin(time*.6)));
    if(name==='EarLeft'||name==='EarRight')return combine(node.base,RZ((name==='EarLeft'?-1:1)*(Math.sin(time*1.6)*.026+(curious*.030))));
    if(name.startsWith('CheekPivot'))return combine(node.base,T(0,smile*.009,.007*smile),S(1+smile*.025,1+smile*.032,1));
    if(name==='MouthPivot')return combine(node.base,T(0,smile*.019,smile*.006),S(1+smile*.18,1,1));
@@ -119,7 +129,7 @@ export class GLBCatRenderer extends CatRenderer{
     const angles=legCache.get((front?'Front':'Back')+(left?'Left':'Right'));
     if(name.startsWith('Leg'))return combine(node.base,RX(angles.hip+(front?-.12*stretching:0)),RZ(angles.greeting*.14));
     if(name.startsWith('Knee'))return combine(node.base,RX(angles.knee));
-    return combine(node.base,RX(angles.paw));
+    return combine(node.base,T(angles.lateral||0,0,0),RX(angles.paw));
    }
    if(name==='TailRoot')return combine(node.base,RY(mind.tail*.38),RZ(Math.sin(time*1.3)*.065));
    if(name==='TailMid')return combine(node.base,RY(-mind.tail*.52),RX(Math.sin(time*1.5+.7)*.11));

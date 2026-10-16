@@ -1,6 +1,6 @@
-import {CatMind} from './behavior.js?v=p10';
-import {CatRenderer} from './renderer.js?v=p10';
-import {GLBCatRenderer} from './glb-renderer.js?v=p10';
+import {CatMind} from './behavior.js?v=p11';
+import {CatRenderer} from './renderer.js?v=p11';
+import {GLBCatRenderer} from './glb-renderer.js?v=p11';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -41,6 +41,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.class
 window.addEventListener('resize',()=>{updateStageBounds();renderer?.resize();},{passive:true});
 $('greetBtn').addEventListener('click',()=>announce(()=>mind.greet()));
 $('walkBtn').addEventListener('click',()=>announce(()=>mind.walk()));
+$('sitBtn').addEventListener('click',()=>announce(()=>mind.sit()));
 $('restBtn').addEventListener('click',()=>announce(()=>mind.rest()));
 $('lookBtn').addEventListener('click',()=>announce(()=>mind.look()));
 $('autoToggle').addEventListener('change',e=>{mind.auto=e.target.checked;mind.interaction=mind.auto?'已启用自主行为':'已暂停自主行为';if(!mind.auto){mind.select('idle',99999,mind.interaction);}else{mind.nextAction=mind.time+4;mind.until=mind.time+1;}});
@@ -57,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p10.glb?v=p10');
+    await newRenderer.load('./models/black-gold-cat-p10.glb?v=p11');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P1.0 GLB内嵌六段手工关键帧动画，配合P0.9四足IK、平滑过渡。不是专业动画师作品或电影级角色';
+    assetStatus.title='P1.1 基于P1.0 GLB六段关键帧，新增程序化坐姿过渡与地面接触约束。不是专业动画师作品或电影级角色';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
