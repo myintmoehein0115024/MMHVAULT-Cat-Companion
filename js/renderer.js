@@ -1,3 +1,4 @@
+/* P1.4: approved black-gold concept, soft object-space velvet strands and golden rim-light. */
 /* Black Gold Cat P1.3 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */
@@ -147,12 +148,21 @@ void main(){
  vec3 reflection=spec*F*(.35+key*.65)*mix(.92,.36,rough);
  // Satin-like fur receives a broader gold edge light than hard surfaces.
  // It is deliberately subtle so the coat stays black instead of turning gold.
- float furHalo=(.013+.057*uFur)*pow(fres,1.35);
- vec3 warmRim=vec3(.97,.64,.36)*(fres*(.038+.12*metal)+furHalo);
+ float furHalo=(.016+.18*uFur)*pow(fres,1.52);
+ // Gold only at the contour: dark velvet remains nearly black at the center.
+ float backRim=max(dot(n,normalize(vec3(-.55,.95,-1.8))),0.0);
+ vec3 warmRim=vec3(1.0,.67,.26)*(fres*(.045+.14*metal)+furHalo*(.75+.50*backRim));
  vec3 coolFill=vec3(.025,.033,.051)*(1.0-metal)*(.6+.4*max(n.y,0.0));
  vec3 color=diffuse+reflection+warmRim+coolFill+vec3(1.0,.76,.36)*uGlow;
- float grain=sin(vW.x*107.0+vW.z*129.0)*sin(vW.y*89.0-vW.z*61.0);
- color*=1.0+uFur*grain*.030;
+ // Stable, anti-aliased cross-grain gives the rough coat soft fibre depth.
+ // Fur anisotropy is object anchored; no flickering time-based texture.
+ float strandAngle=dot(vObj,vec3(84.0,19.0,-25.0));
+ float strandCurve=sin(dot(vObj,vec3(17.0,52.0,36.0)))*1.15;
+ float strandPhase=strandAngle+strandCurve;
+ float strandVis=clamp((3.7-fwidth(strandPhase))*.42,0.0,1.0);
+ float strand=sin(strandPhase)*sin(dot(vObj,vec3(11.0,63.0,-7.0)));
+ color*=1.0+uFur*strandVis*strand*.105;
+ color+=uFur*vec3(.12,.075,.036)*pow(fres,2.5)*strandVis*(.5+.5*strand);
  // Procedural iris fibers: inexpensive local-space detailing on the existing
  // amber mesh, without an external texture request. No effect on pupils.
  if(uEyeAccent>.5){
@@ -170,7 +180,7 @@ function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT
 export class CatRenderer{
  constructor(canvas,options={}){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
   this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]','uEyeAccent'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
-  this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
+  this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.009,.030,.051,1);this.lost=false;
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
  upload(mesh){
@@ -302,3 +312,5 @@ export class CatRenderer{
  }
  dispose(){const g=this.gl;if(!g)return;for(const m of Object.values(this.meshes)){g.deleteVertexArray(m.vao);if(m.vertexBuffer)g.deleteBuffer(m.vertexBuffer);if(m.indexBuffer)g.deleteBuffer(m.indexBuffer);}g.deleteProgram(this.shader);}
 }
+
+/* Release marker p14 */

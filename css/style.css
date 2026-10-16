@@ -84,7 +84,7 @@ p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
 .status div:last-child { border: 0; }
 .status span { color: var(--muted); }
 .status strong { color: #f4d48f; text-align: right; overflow-wrap: anywhere; }
-.design-panel img { width: 100%; aspect-ratio: 16/8.6; object-fit: cover; object-position: center 53%; border-radius: 12px; border: 1px solid #3a3c37; display: block; margin: 12px 0; }
+.design-panel img { width: 100%; aspect-ratio: 4/3; object-fit: contain; object-position: center; border-radius: 12px; border: 1px solid #3a3c37; display: block; margin: 12px 0; }
 .design-panel p { font-size: 11px; }
 .design-panel p strong { color: var(--gold-light); }
 code { color: #d6bf84; }
@@ -168,3 +168,8 @@ body.cat-focus { overflow: hidden; }
   .actions button, .focus-btn, .toggle span, .toggle span:after { transition: none; }
   .actions button:hover { transform: none; }
 }
+
+/* P1.4: keep the full approved multi-view concept visible without crop. */
+.design-panel img { background: #03131e; box-shadow: 0 0 25px #e6b25c13; }
+
+/* Release marker p14 */
