@@ -1,6 +1,6 @@
-/* Black Gold Cat P0.9 — autonomous behavior with frame-rate independent motion blending.
+/* Black Gold Cat P1.0 — autonomous behavior with frame-rate independent motion blending.
    This is an independent character prototype: no MMHVAULT imports or financial data. */
-import {blendPose,newPose,clamp01} from './motion-mixer.js?v=p09';
+import {blendPose,newPose,clamp01} from './motion-mixer.js?v=p10';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const approach=(a,b,t)=>a+(b-a)*clamp01(t);
 const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
@@ -13,6 +13,7 @@ export class CatMind{
   constructor(){
     this.auto=true;this.mode='welcome';this.modeAt=0;this.until=2.8;this.nextAction=9;
     this.pose=newPose('welcome');this.poseTransition='欢迎';
+    this.clipAges=Object.fromEntries(['idle','walk','loaf','inspect','welcome','stretch'].map(a=>[a,0]));
     this.x=0;this.z=0;this.yaw=0;this.faceTarget=0;this.targetX=0;this.targetZ=0;
     this.time=0;this.energy=.65;this.travelLimit=1.15;
     this.gazeX=0;this.gazeY=0;this.gazeUntil=0;
@@ -24,6 +25,7 @@ export class CatMind{
     this.walkTargetDistance=0;
   }
   select(mode,duration,reason){
+    if(this.mode!==mode) this.clipAges[mode]=0;
     this.mode=mode;this.modeAt=this.time;this.until=this.time+duration;
     this.interaction=reason||this.interaction;
     this.status=({welcome:'轻轻抬爪打招呼',inspect:'正认真地看着你',walk:'正在慢慢巡视',
@@ -56,6 +58,7 @@ export class CatMind{
   }
   update(time,dt){
     this.time=time;dt=clamp(dt,0,.05);
+    this.clipAges[this.mode]=(this.clipAges[this.mode]||0)+dt;
     if(time>=this.nextBlink){this.nextBlink=time+2+Math.random()*3.2;this.blinkStart=time;}
     const blinkT=(time-(this.blinkStart??-10))/.18;
     this.blink=blinkT>=0&&blinkT<1?Math.sin(blinkT*Math.PI):0;

@@ -1,6 +1,7 @@
-/* P0.8 self-hosted GLB geometry + two weighted skins (body + tail).
+/* P1.0 GLB geometry, two GPU skins and real glTF animation samplers.
    Supports one embedded GLB buffer, up to 16 joints per skin (renderer max),
-   JOINTS_0/WEIGHTS_0 and inverse bind matrices; no clips, textures, Draco/KTX2.
+   JOINTS_0/WEIGHTS_0, inverse bind matrices, LINEAR / STEP keyframed animation.
+   No CUBICSPLINE, textures, Draco/KTX2.
    Not a complete glTF implementation or a studio grooming solution. */
 const COMPONENT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
 const ELEMENTS={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
@@ -41,7 +42,6 @@ export async function loadCatGLB(url,{signal}={}){
  if(!json||!binary||json.asset?.version!=='2.0')throw Error('GLB 缺少模型数据');
  if((json.buffers||[]).length!==1)throw Error('当前测试加载器仅支持一个 GLB buffer');
  if(json.extensionsRequired?.length)throw Error('当前测试加载器尚不支持此模型需要的 glTF 扩展');
- if(json.animations?.length)throw Error('当前蒙皮原型尚未支持 glTF 内嵌动画剪辑');
  const meshes=(json.meshes||[]).map((m,index)=>{
   return (m.primitives||[]).map(prim=>{
    if(prim.mode!==undefined&&prim.mode!==4)throw Error('只能绘制三角形网格');
@@ -98,6 +98,30 @@ export async function loadCatGLB(url,{signal}={}){
    }
  }
 
+ // Parse native glTF 2.0 animation channels. This first animation-ready
+ // loader intentionally handles only node rotation/translation/scale and
+ // LINEAR/STEP samplers. Reject advanced modes rather than silently corrupting.
+ const animations=(json.animations||[]).map((animation,i)=>{
+   const samplers=(animation.samplers||[]).map((sampler,si)=>{
+     const times=readAccessor(json,binary,sampler.input),values=readAccessor(json,binary,sampler.output);
+     const interpolation=sampler.interpolation||'LINEAR';
+     if(!['LINEAR','STEP'].includes(interpolation))throw Error('动画 '+i+' 采样模式尚不支持 '+interpolation);
+     if(times.length===0 || !Array.from(times).every((t,k)=>Number.isFinite(t)&&(k===0||t>times[k-1])))throw Error('动画关键帧时间无效');
+     if(!values.every(Number.isFinite))throw Error('动画关键帧有无效数值');
+     return {times,values,interpolation};
+   });
+   const channels=(animation.channels||[]).map(ch=>{
+     const {node,path}=ch.target||{};
+     if(!Number.isInteger(node)||!nodes[node])throw Error('动画目标节点无效');
+     if(!['rotation','translation','scale'].includes(path))throw Error('暂不支持动画目标 '+path);
+     const sampler=samplers[ch.sampler];
+     if(!sampler)throw Error('动画 sampler 索引无效');
+     const count=path==='rotation'?4:3;
+     if(sampler.values.length!==sampler.times.length*count)throw Error('动画采样数与节点类型不匹配');
+     return {node,path,sampler};
+   });
+   return {name:animation.name||`clip-${i}`,channels,duration:Math.max(0,...samplers.map(s=>s.times[s.times.length-1])),loop:!!animation.extras?.loop};
+ });
  const roots=json.scenes?.[json.scene||0]?.nodes || [0];
- return {meshes,nodes,skins,roots,bytes:buffer.byteLength,materialCount:(json.materials||[]).length};
+ return {meshes,nodes,skins,animations,roots,bytes:buffer.byteLength,materialCount:(json.materials||[]).length};
 }

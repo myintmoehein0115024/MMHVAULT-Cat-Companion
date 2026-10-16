@@ -1,6 +1,6 @@
-import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js?v=p09';
-import {GLBCatRenderer} from './glb-renderer.js?v=p09';
+import {CatMind} from './behavior.js?v=p10';
+import {CatRenderer} from './renderer.js?v=p10';
+import {GLBCatRenderer} from './glb-renderer.js?v=p10';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -57,11 +57,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p08.glb?v=p08');
+    await newRenderer.load('./models/black-gold-cat-p10.glb?v=p10');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P0.9 动作混合引擎 + P0.8 全身GPU蒙皮模型。仍属程序化动作原型，非专业动画剪辑或电影级角色';
+    assetStatus.title='P1.0 GLB内嵌六段手工关键帧动画，配合P0.9四足IK、平滑过渡。不是专业动画师作品或电影级角色';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

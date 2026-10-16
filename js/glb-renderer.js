@@ -1,8 +1,9 @@
-/* Black Gold Cat P0.9 — procedural motion-layer blending atop real GPU-skinned body and tail.
-   Face details remain attached to rigid named pivots; this is NOT final studio topology, a film groom or complete glTF animation clips. */
-import {CatRenderer} from './renderer.js?v=p09';
-import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p09';
-import {loadCatGLB} from './glb-loader.js?v=p09';
+/* Black Gold Cat P1.0 — native glTF animation clips blended over GPU-skinned body and tail.
+   Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
+import {CatRenderer} from './renderer.js?v=p10';
+import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p10';
+import {loadCatGLB} from './glb-loader.js?v=p10';
+import {sampleAnimationLayers} from './clip-player.js?v=p10';
 
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const mul=(a,b)=>{const out=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)out[c*4+r]+=a[k*4+r]*b[c*4+k];return out;};
@@ -49,9 +50,11 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.9 连续骨骼与动作混合 GLB';}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.0 内嵌动画剪辑 GLB';}
  async load(url){
   const model=await loadCatGLB(url);
+  if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
+   throw Error('P1.0 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p10.glb 是否上传完整');
   const meshes=model.meshes.map(prims=>prims.map(p=>{
    const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
     jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
@@ -59,8 +62,8 @@ export class GLBCatRenderer extends CatRenderer{
    const metal=clamp(p.metallic??0,0,1),rough=clamp(p.roughness??1,.065,1);
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds};
   }));
-  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,roots:model.roots};
-  this.assetName='P0.9 全身骨骼＋自然过渡 · '+Math.round(model.bytes/1024)+' KB · '+model.skins.length+'组骨骼';
+  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
+  this.assetName='P1.0 · '+model.animations.length+'段 GLB 关键帧剪辑 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -75,6 +78,7 @@ export class GLBCatRenderer extends CatRenderer{
   const breath=.005*Math.sin(time*2.05),bodyBob=.0065*Math.sin(mind.step*2)*walk;
   const curious=clamp(pose.inspect+pose.welcome*.55,0,1);
   const smile=clamp(greet*.95+stretching*.65+curious*.23,0,1);
+  const clipPose=sampleAnimationLayers(this.model.animations,pose,mind.clipAges,mind.step);
   const legCache=new Map();
   for(const front of [true,false])for(const left of [true,false]){
    const key=(front?'Front':'Back')+(left?'Left':'Right');
@@ -128,7 +132,9 @@ export class GLBCatRenderer extends CatRenderer{
   const drawList=[],worlds=new Array(this.model.nodes.length);
   const traverse=(id,parent)=>{
    const node=this.model.nodes[id];if(!node)return;
-   const world=mul(parent,poseFor(node));worlds[id]=world;
+   const clipQ=clipPose.get(id);
+   const local=poseFor(node);
+   const world=mul(parent,clipQ?mul(local,qmat(clipQ)):local);worlds[id]=world;
    if(node.mesh!==undefined)drawList.push({node,world});
    for(const child of node.children)traverse(child,world);
   };
