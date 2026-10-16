@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07121d">
+  <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
+  <title>Black Gold Cat — 独立3D行为实验室</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
+      <span class="release">Prototype 0.1 · 与财务系统隔离</span>
+    </header>
+    <section class="main-grid" aria-label="独立猫咪测试场景">
+      <div class="stage-card">
+        <div class="stage-top">
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>这一版先验证真正的实时3D转身、走动、趴下和自然回应。电影级黑金幼猫将在后续使用独立角色资产替换。</p></div>
+          <span class="tag" id="health"><span class="status-dot"></span> 引擎初始化中</span>
+        </div>
+        <div class="viewport-shell">
+          <canvas id="catCanvas" aria-label="可互动的实时3D黑金猫动作原型">浏览器需要支持 Canvas 和 WebGL2。</canvas>
+          <div class="stage-shine"></div>
+          <div class="corner-meta"><span>实时3D · 自主行为</span><span id="fps">— FPS</span></div>
+          <div class="stage-caption"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
+          <div class="stage-error" id="error" hidden></div>
+        </div>
+        <div class="stage-toolbar">
+          <div class="toolcopy"><strong>自动陪伴模式</strong><small>不需要手动选择正面或侧面：猫咪自主转身，移动和观察</small></div>
+          <div class="switch-row"><label class="toggle"><input type="checkbox" id="autoToggle" checked><span></span></label><span>自主行为</span></div>
+        </div>
+      </div>
+      <aside class="sidebar">
+        <div class="panel behavior-panel">
+          <span class="eyebrow">BEHAVIOR TEST</span>
+          <h2>试试和猫咪互动</h2>
+          <p class="hint">可以点击3D场景中的猫咪，也可以用下方按钮测试动作。</p>
+          <div class="actions">
+            <button type="button" id="greetBtn"><span>✧</span> 打招呼</button>
+            <button type="button" id="walkBtn"><span>➜</span> 走动</button>
+            <button type="button" id="restBtn"><span>☾</span> 趴下休息</button>
+            <button type="button" id="lookBtn"><span>◉</span> 看向我</button>
+          </div>
+          <div class="status"><div><span>当前行为</span><strong id="stateLabel">初始化中</strong></div><div><span>自动朝向</span><strong id="directionLabel">正面</strong></div><div><span>宠物响应</span><strong id="interactionLabel">等待互动</strong></div></div>
+        </div>
+        <div class="panel design-panel">
+          <span class="eyebrow">FINAL ART TARGET</span><h2>唯一的黑金幼猫</h2>
+          <img src="./assets/black-gold-cat-reference.webp" alt="最终黑金幼猫外观参考图：精致、可爱、黑金色，电影动画风" loading="lazy">
+          <p>上面是<strong>角色美术参考</strong>，不是实时3D模型。最终会使用专门制作的 <code>.glb</code> 模型、毛发材质和动画资产。</p>
+        </div>
+        <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
+          <div class="milestone"><span class="done">✓</span><div><strong>独立网站与实时3D演示</strong><small>当前版本：验证行为系统、三维渲染和用户操作</small></div></div>
+          <div class="milestone"><span class="pending">2</span><div><strong>专业高精度3D角色</strong><small>猫科比例、面部、毛发、眼睛、四足骨骼</small></div></div>
+          <div class="milestone"><span class="pending">3</span><div><strong>动画与场景自主行为</strong><small>完整行走循环、IK落脚、转身、睡眠、唤醒</small></div></div>
+          <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
+        </div>
+      </aside>
+    </section>
+    <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
+  </main>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

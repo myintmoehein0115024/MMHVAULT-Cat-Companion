@@ -1,0 +1,134 @@
+/* Black Gold Cat WebGL2 prototype renderer — dependency-free, realtime geometry.
+   This is a behavior proxy, NOT a cinematic model or a professionally skinned GLB.
+   Future: replace the drawCat() proxy with a separately rigged character asset. */
+const PI=Math.PI;
+const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+const multiply=(a,b)=>{const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;};
+const T=(x=0,y=0,z=0)=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]);
+const S=(x=1,y=1,z=1)=>new Float32Array([x,0,0,0,0,y,0,0,0,0,z,0,0,0,0,1]);
+const RX=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]);};
+const RY=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]);};
+const RZ=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]);};
+const mat=(parent, ...changes)=>changes.reduce((a,b)=>multiply(a,b),parent);
+const perspective=(fov,ratio,near,far)=>{let f=1/Math.tan(fov/2),m=new Float32Array(16);m[0]=f/ratio;m[5]=f;m[10]=(far+near)/(near-far);m[11]=-1;m[14]=(2*far*near)/(near-far);return m;};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+const norm=a=>{const l=Math.hypot(...a)||1;return a.map(v=>v/l);};
+const lookAt=(eye,center)=>{const z=norm(eye.map((v,i)=>v-center[i])),x=norm(cross([0,1,0],z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1]);};
+function rgba(hex){const h=hex.replace('#','');return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255];}
+function ellipsoid(lon=28,lat=18){const pos=[],normal=[],idx=[];for(let i=0;i<=lat;i++){const a=Math.PI*i/lat;for(let j=0;j<=lon;j++){const b=2*Math.PI*j/lon,x=Math.sin(a)*Math.cos(b),y=Math.cos(a),z=Math.sin(a)*Math.sin(b);pos.push(x,y,z);normal.push(x,y,z);}}
+ for(let i=0;i<lat;i++)for(let j=0;j<lon;j++){const k=i*(lon+1)+j;idx.push(k,k+1,k+lon+1,k+1,k+lon+2,k+lon+1);}return {pos,normal,idx};}
+function earShape(){const pos=[],normal=[],idx=[];const triangles=[
+ [[-.17,0,.08],[.17,0,.08],[0,.36,.015]],
+ [[.17,0,-.06],[-.17,0,-.06],[0,.36,.015]],
+ [[-.17,0,-.06],[-.17,0,.08],[0,.36,.015]],
+ [[.17,0,.08],[.17,0,-.06],[0,.36,.015]],
+ [[-.17,0,-.06],[.17,0,-.06],[.17,0,.08]],
+ [[.17,0,.08],[-.17,0,.08],[-.17,0,-.06]]];
+ for(const tri of triangles){const a=tri[0],b=tri[1],c=tri[2],n=norm(cross(b.map((v,i)=>v-a[i]),c.map((v,i)=>v-a[i])));const k=pos.length/3;for(const p of tri){pos.push(...p);normal.push(...n);}idx.push(k,k+1,k+2);}return {pos,normal,idx};}
+function circle(radius=1,thickness=.055,segments=72){const pos=[],normal=[],idx=[];for(let j=0;j<=segments;j++){const a=j*2*PI/segments;for(const r of [radius-thickness,radius+thickness]){pos.push(Math.cos(a)*r,0,Math.sin(a)*r);normal.push(0,1,0);}}for(let j=0;j<segments;j++){const n=j*2;idx.push(n,n+2,n+1,n+1,n+2,n+3);}return {pos,normal,idx};}
+const VERT=`#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNormal;
+uniform mat4 uProj,uView,uModel;
+out vec3 vN,vW;
+void main(){ vec4 p=uModel*vec4(aPos,1.0); vW=p.xyz; vN=mat3(transpose(inverse(uModel)))*aNormal; gl_Position=uProj*uView*p; }`;
+const FRAG=`#version 300 es
+precision highp float;
+in vec3 vN,vW;
+uniform vec3 uColor;
+uniform float uMetal,uGlow;
+out vec4 frag;
+void main(){vec3 n=normalize(vN);vec3 key=normalize(vec3(-0.52,1.65,2.2));vec3 rim=normalize(vec3(1.3,.7,-1.6));float a=max(dot(n,key),0.0),b=max(dot(n,rim),0.0);float glow=pow(1.0-max(dot(n,normalize(vec3(0.0,.6,2.1))),0.0),2.4);
+vec3 color=uColor*(.29+.80*a)+uColor*.14*b+vec3(1.0,.63,.23)*glow*(.13+.36*uMetal)+vec3(1.0,.78,.41)*uGlow;float spec=pow(max(dot(n,normalize(key+normalize(vec3(.0,1.0,2.8)))),0.),42.0);color+=vec3(1.0,.81,.52)*spec*(.05+uMetal*.45);frag=vec4(pow(color,vec3(.92)),1.0);}`;
+function shader(gl,source,type){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
+function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT,gl.VERTEX_SHADER));gl.attachShader(p,shader(gl,FRAG,gl.FRAGMENT_SHADER));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
+export class CatRenderer{
+ constructor(canvas){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
+  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
+  this.meshes={sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
+  this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
+ }
+ upload(mesh){const g=this.gl,vao=g.createVertexArray();g.bindVertexArray(vao);const buffer=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,buffer);const interleaved=[];for(let i=0;i<mesh.pos.length;i+=3)interleaved.push(...mesh.pos.slice(i,i+3),...mesh.normal.slice(i,i+3));g.bufferData(g.ARRAY_BUFFER,new Float32Array(interleaved),g.STATIC_DRAW);g.enableVertexAttribArray(0);g.vertexAttribPointer(0,3,g.FLOAT,false,24,0);g.enableVertexAttribArray(1);g.vertexAttribPointer(1,3,g.FLOAT,false,24,12);const ib=g.createBuffer();g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,new Uint16Array(mesh.idx),g.STATIC_DRAW);g.bindVertexArray(null);return {vao,count:mesh.idx.length};}
+ resize(){const rect=this.canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,1.8);const w=Math.max(2,Math.round(rect.width*dpr)),h=Math.max(2,Math.round(rect.height*dpr));if(this.size[0]!==w||this.size[1]!==h){this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);}}
+ draw(mesh,model,color,metal=0,glow=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
+ ball(parent,point,size,color,metal=0,extra=[]){this.draw('sphere',mat(parent,T(...point),...extra,S(...size)),color,metal);}
+ ear(parent,side,time){const pitch=.045*Math.sin(time*1.8+side),p=mat(parent,T(side*.34,.39,-.12),RZ(-side*.08),RX(pitch));this.draw('ear',p,'#0c1017');this.draw('ear',mat(p,T(0,.06,.076),S(.62,.72,.36)),'#995b43',0,.02);}
+ drawCat(mind,time){const g=this.gl;
+  const root=mat(I(),T(mind.x,0,mind.z),RY(mind.yaw));
+  const bodyY=.78-mind.crouch*.17;
+  const motion=mind.motion;
+  const walk=Math.min(1,motion*2.2),step=mind.step;
+  const breathing=Math.sin(time*2.2)*.011;
+  // ground platform and contact shadow are drawn BEFORE the cat, aligned to y = 0
+  this.draw('shadow',mat(I(),T(mind.x,.002,mind.z),S(1.15,1,.95)),'#0c1a1f',0);
+  this.draw('ring',mat(I(),T(mind.x,.017,mind.z),S(1.28,1,.93)),'#846333',.55);
+  this.draw('ring',mat(I(),T(mind.x,.016,mind.z),S(.9,1,.58)),'#453a28',.05);
+  const torso=mat(root,T(0,bodyY+.02+Math.sin(step*2)*.015*walk,0));
+  this.ball(torso,[0,0,-.10],[.55,.38+breathing, .88],'#090b10');
+  this.ball(torso,[0,.04,-.03],[.57,.40,.76],'#111116');
+  this.ball(torso,[0,-.19,.35],[.32,.22,.38],'#1e1712');
+  this.ball(torso,[0,-.22,.49],[.14,.14,.17],'#b48038',.12);
+  // legs are separated and animated individually; final rigged model will provide actual IK.
+  for(const side of [-1,1])for(const front of [true,false]){
+   const stride=walk*Math.sin(step+(side*(front?1:-1)>0?PI:0));
+   const shift=stride*.15;
+   const lift=walk*Math.max(0,stride)*.11;
+   const anchorY=bodyY-.10;
+   const z=front?.52:-.65;
+   const xx=side*(front?.365:.40);
+   const center=(anchorY+(.14+lift))/2;
+   this.ball(root,[xx,center,z+shift*.6],[.145,Math.max(.15,(anchorY-.12-lift)/2+.10),.16],front?'#111218':'#14151a');
+   this.ball(root,[xx,.145+lift,z+.09+shift],[.17,.115,.22],'#1a1819');
+   this.ball(root,[xx,.11+lift,z+.19+shift],[.124,.067,.115],'#ac7835',.12);
+  }
+  // tail arcs swing as a continuous curve of overlapping tapered segments
+  const tailRoot=mat(torso,T(.0,.07,-.86),RY(.22+mind.tail*.20),RZ(.12+mind.tail*.18));
+  this.ball(tailRoot,[0,.07,-.16],[.165,.16,.32],'#101014');
+  this.ball(tailRoot,[.04,.24,-.37],[.14,.16,.26],'#111015');
+  this.ball(tailRoot,[.10,.42,-.48],[.16,.22,.19],'#17110c');
+  this.ball(tailRoot,[.12,.52,-.49],[.15,.16,.16],'#7b5529');
+  // neck and animated head keep their own local rotation
+  const head=mat(torso,T(0,.33,.58),RY(Math.sin(time*.9)*.06+mind.gazeX*.15),RX(Math.sin(time*.61)*.034-mind.gazeY*.08));
+  this.ball(head,[0,0,0],[.49,.46,.46],'#090b11',.05);
+  this.ball(head,[0,-.10,.23],[.51,.39,.34],'#101017',.04);
+  this.ball(head,[0,-.35,.08],[.34,.21,.29],'#21180f');
+  for(const side of [-1,1]){
+   this.ear(head,side,time);
+   // warm cheek tufts behind the eyes, not over the eyes
+   this.ball(head,[side*.376,-.19,.14],[.17,.20,.19],'#1a1313');
+   const eye=mat(head,T(side*.206,.074,.432),RY(-side*.10));
+   this.draw('sphere',mat(eye,S(.166,.179,.070)),'#21160e',.08);
+   const eyeScale=Math.max(.03,1-mind.blink*.95);
+   this.draw('sphere',mat(eye,T(0,-.003,.063),S(.136,.145*eyeScale,.033)),'#d99638',.48);
+   this.draw('sphere',mat(eye,T(side*mind.gazeX*.016,0,.095),S(.056,.108*eyeScale,.020)),'#0e0d0b',.13);
+   this.draw('sphere',mat(eye,T(-.039,.055,.116),S(.023,.027*eyeScale,.008)),'#fff0c2',.17,.12);
+   this.ball(head,[side*.118,-.208,.413],[.128,.10,.114],'#5b3a24');
+   this.ball(head,[side*.117,-.214,.499],[.115,.075,.035],'#ad7b40');
+  }
+  this.ball(head,[0,-.15,.507],[.082,.055,.047],'#bd8768',.25);
+  this.ball(head,[0,-.206,.522],[.024,.052,.022],'#1c1311');
+  this.ball(head,[0,-.255,.503],[.095,.024,.034],'#7c583c');
+  this.ball(head,[0,-.307,.32],[.21,.070,.074],'#100d10');
+  // collar and small gold medallion
+  this.ball(torso,[0,.192,.46],[.17,.055,.075],'#805521',.78);
+  this.ball(torso,[0,.08,.79],[.103,.103,.05],'#dfac50',.9);
+  this.ball(torso,[0,.08,.841],[.060,.062,.014],'#4b3318',.3);
+  // animated welcoming raised forepaw
+  if(mind.mode==='welcome'){
+    const envelope=Math.sin(Math.min(1,(time-mind.modeAt)/2.7)*Math.PI);
+    this.ball(root,[-.46,.63+.18*envelope,.65],[.12,.22,.13],'#11121a',0,[RZ(-envelope*.5)]);
+    this.ball(root,[-.57,.76+.20*envelope,.75],[.16,.12,.16],'#191417');
+  }
+  if(mind.mode==='stretch'){
+    // small forward head stretch, controlled and non-teleporting
+    const stretch=Math.sin(Math.min(1,(time-mind.modeAt)/2.8)*Math.PI);
+    this.ball(root,[0,bodyY-.2,.74+stretch*.24],[.20,.105,.12],'#181619');
+  }
+ }
+ render(mind,time){if(this.lost)return;this.resize();const g=this.gl;const ratio=this.size[0]/Math.max(1,this.size[1]);g.clear(g.COLOR_BUFFER_BIT|g.DEPTH_BUFFER_BIT);g.useProgram(this.shader);g.uniformMatrix4fv(this.loc.uProj,false,perspective(.72,ratio,.1,50));
+  const phone=ratio<.9;g.uniformMatrix4fv(this.loc.uView,false,lookAt([0,phone?2.3:2.0,phone?6.8:5.8],[0,.89,0]));this.drawCat(mind,time);
+ }
+ dispose(){const g=this.gl;if(!g)return;for(const m of Object.values(this.meshes))g.deleteVertexArray(m.vao);g.deleteProgram(this.shader);}
+}
