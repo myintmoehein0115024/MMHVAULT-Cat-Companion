@@ -1,8 +1,7 @@
-/* Black Gold Cat P0.7 — first real GPU-skinned tail experiment + articulated limbs.
-   Weighted glTF skin/inverse bind supported for tail; remaining limbs still use
-   independent node pivots. Neither full-body studio armature nor film groom. */
-import {CatRenderer} from './renderer.js?v=p07';
-import {loadCatGLB} from './glb-loader.js?v=p07';
+/* Black Gold Cat P0.8 — real GPU-skinned continuous coat/body/legs and weighted tail.
+   Face details remain attached to rigid named pivots; this is NOT final studio topology, a film groom or complete glTF animation clips. */
+import {CatRenderer} from './renderer.js?v=p08';
+import {loadCatGLB} from './glb-loader.js?v=p08';
 
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const mul=(a,b)=>{const out=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)out[c*4+r]+=a[k*4+r]*b[c*4+k];return out;};
@@ -49,7 +48,7 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.7 蒙皮骨骼试验 GLB';}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.8 躯干四足蒙皮 GLB';}
  async load(url){
   const model=await loadCatGLB(url);
   const meshes=model.meshes.map(prims=>prims.map(p=>{
@@ -60,7 +59,7 @@ export class GLBCatRenderer extends CatRenderer{
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,roots:model.roots};
-  this.assetName='P0.7 GLB蒙皮试验猫 · '+Math.round(model.bytes/1024)+' KB · '+model.skins.length+'组蒙皮';
+  this.assetName='P0.8 连续躯干与四足蒙皮 · '+Math.round(model.bytes/1024)+' KB · '+model.skins.length+'组骨骼';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -134,7 +133,12 @@ export class GLBCatRenderer extends CatRenderer{
    return matrices;
   });
   for(const {node,world} of drawList){
-    // Replace the four old rigid tail pieces by a smoothly weighted tube.
+    // Hide P0.7 rigid torso/leg shells, now replaced by one smoothly connected
+    // skin-weighted body surface. Keep paw pads/toes and all face details.
+    if(this.model.skins.length>=2 && (
+      ['Body','BodyFurBase','BodyFurTufts','Chest','ChestGoldFuzz','ChestBib'].includes(node.name) ||
+      /^(UpperLeg|LowerLeg)(Front|Back)(Left|Right)$/.test(node.name))) continue;
+    // Replace the old rigid segmented tail shells with the weighted tube.
     if(this.model.skins.length&&['TailBase','TailMidFur','TailTipFur','TailHair'].includes(node.name))continue;
     for(const p of this.model.meshes[node.mesh]){
       if(p.doubleSided)g.disable(g.CULL_FACE);

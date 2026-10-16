@@ -1,6 +1,6 @@
-/* Black Gold Cat P0.7 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
+/* Black Gold Cat P0.8 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
-   Lightweight weighted-skin test (tail only), NOT a final cinematic or full character armature. No external CDNs. */
+   Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */
 const PI=Math.PI;
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const multiply=(a,b)=>{const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;};
@@ -104,7 +104,7 @@ layout(location=2) in vec3 aVertexColor;
 layout(location=3) in vec4 aJointIds;
 layout(location=4) in vec4 aJointWeights;
 uniform mat4 uProj,uView,uModel;
-uniform mat4 uJointPalette[8];
+uniform mat4 uJointPalette[16];
 uniform float uUseSkin;
 out vec3 vN,vW,vVertexColor;
 void main(){

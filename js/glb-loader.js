@@ -1,5 +1,5 @@
-/* P0.7 self-hosted GLB geometry + small weighted-skin loader.
-   Supports one embedded GLB buffer, up to 8 joints per skin (renderer max),
+/* P0.8 self-hosted GLB geometry + two weighted skins (body + tail).
+   Supports one embedded GLB buffer, up to 16 joints per skin (renderer max),
    JOINTS_0/WEIGHTS_0 and inverse bind matrices; no clips, textures, Draco/KTX2.
    Not a complete glTF implementation or a studio grooming solution. */
 const COMPONENT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
@@ -75,14 +75,28 @@ export async function loadCatGLB(url,{signal}={}){
  });
  const nodes=(json.nodes||[]).map(n=>({name:n.name||'',mesh:n.mesh,skin:n.skin,children:n.children||[],matrix:n.matrix||null,translation:n.translation||[0,0,0],rotation:n.rotation||[0,0,0,1],scale:n.scale||[1,1,1]}));
  const skins=(json.skins||[]).map((sk,i)=>{
-   if(!sk.joints?.length||sk.joints.length>8||sk.inverseBindMatrices===undefined)throw Error('蒙皮关节数超过8或缺少 inverseBindMatrices: '+i);
+   if(!sk.joints?.length||sk.joints.length>16||sk.inverseBindMatrices===undefined)throw Error('蒙皮关节数超过16或缺少 inverseBindMatrices: '+i);
    const inverseBindMatrices=readAccessor(json,binary,sk.inverseBindMatrices);
    if(inverseBindMatrices.length!==sk.joints.length*16)throw Error('反向绑定矩阵数量错误');
    for(const joint of sk.joints)if(!nodes[joint])throw Error('蒙皮骨骼节点索引无效');
    return {joints:sk.joints,inverseBindMatrices};
  });
  for(const n of nodes)if(n.skin!==undefined&&!skins[n.skin])throw Error('未找到绑定的 glTF skin');
- for(const m of meshes)for(const p of m)if(p.jointIds){for(const k of p.jointIds)if(k>=8)throw Error('当前蒙皮加载器只支持0至7号骨骼索引');}
+ for(const node of nodes){
+   if(node.mesh===undefined)continue;
+   if(!meshes[node.mesh])throw Error('节点引用了不存在的网格');
+   for(const prim of meshes[node.mesh]){
+     if(!prim.jointIds)continue;
+     if(node.skin===undefined || !skins[node.skin])throw Error('蒙皮网格没有绑定 skin');
+     const count=skins[node.skin].joints.length;
+     for(const k of prim.jointIds)if(k>=count)throw Error('蒙皮关节索引超出 '+count+' 号骨骼范围');
+     for(let v=0;v<prim.jointWeights.length;v+=4){
+       let sum=0;
+       for(let k=v;k<v+4;k++){const w=prim.jointWeights[k];if(!Number.isFinite(w)||w<0)throw Error('蒙皮权重非有限数或负值');sum+=w;}
+       if(!(sum>0.999 && sum<1.001))throw Error('蒙皮顶点权重未归一化');
+     }
+   }
+ }
 
  const roots=json.scenes?.[json.scene||0]?.nodes || [0];
  return {meshes,nodes,skins,roots,bytes:buffer.byteLength,materialCount:(json.materials||[]).length};

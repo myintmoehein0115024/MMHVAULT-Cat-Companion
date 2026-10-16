@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js?v=p07';
-import {GLBCatRenderer} from './glb-renderer.js?v=p07';
+import {CatRenderer} from './renderer.js?v=p08';
+import {GLBCatRenderer} from './glb-renderer.js?v=p08';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -56,11 +56,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p07.glb?v=p07');
+    await newRenderer.load('./models/black-gold-cat-p08.glb?v=p08');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P0.7 GLB 加载成功：真实GPU蒙皮尾巴 + P0.6四足关节与表情；尚未完成全身专业蒙皮和电影级角色资产';
+    assetStatus.title='P0.8 GLB 加载成功：躯干与四足连续蒙皮 + 独立尾巴蒙皮；脸部保留分层表情。仍不是电影级角色资产';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
