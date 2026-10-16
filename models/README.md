@@ -11,3 +11,6 @@
 专业 GLB 建议具备：独立猫科拓扑、正确 UV、PBR 毛发烘焙贴图、真实猫爪骨骼、分层尾骨、面部 blendshapes，以及 Idle/Walk/Sit/Loaf/Stand/Stretch/Purr/Greet 8 套动画。
 
 注意：**不能直接覆盖现有 GLB 并假设所有专业骨骼模型都能播放**。在引入真正蒙皮与 PBR 材质后，必须升级播放器至完整 glTF 动画与材质系统，继续保留老模型回退。
+
+
+P0.5：black-gold-cat-p05.glb 增加四条腿的 Knee（肘/跗关节）与眼睑节点，材质支持 roughnessFactor。仍是分层关节式模型，不是真正 skin 蒙皮。

@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js?v=p04';
-import {GLBCatRenderer} from './glb-renderer.js?v=p04';
+import {CatRenderer} from './renderer.js?v=p05';
+import {GLBCatRenderer} from './glb-renderer.js?v=p05';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -56,11 +56,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p04.glb?v=p04');
+    await newRenderer.load('./models/black-gold-cat-p05.glb?v=p05');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='真实 GLB 文件加载成功；该模型仍是原创分层原型，并非专业蒙皮动画电影模型';
+    assetStatus.title='P0.5 分层关节式 GLB 加载成功；包含肘/跗关节与眼睑，仍不是专业蒙皮动画电影模型';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

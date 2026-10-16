@@ -1,5 +1,5 @@
-/* Self-hosted minimal GLB 2.0 geometry loader for this P0.4 original modular model.
-   Supports embedded buffer, triangle primitives, node hierarchy and baseColorFactor.
+/* Self-hosted GLB 2.0 geometry loader for the P0.5 articulated prototype.
+   Supports embedded buffer, triangle primitives, node hierarchy, baseColorFactor and metallic-roughness factors.
    Explicitly does NOT yet support skinned meshes, animation clips, texture maps,
    Draco/KTX2 or full PBR. Future studio assets need a full glTF pipeline. */
 const COMPONENT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
@@ -8,7 +8,7 @@ function readAccessor(json,bytes,index){
  const a=json.accessors?.[index];if(!a)throw Error('无效 glTF accessor '+index);
  if(a.sparse)throw Error('暂不支持稀疏 accessor');
  const view=json.bufferViews?.[a.bufferView];
- if(!view ||view.buffer!==0)throw Error('P0.4 仅支持内置单个 GLB buffer');
+ if(!view ||view.buffer!==0)throw Error('当前测试加载器仅支持内置单个 GLB buffer');
  const ctor=COMPONENT[a.componentType];const n=ELEMENTS[a.type];
  if(!ctor||!n)throw Error('不支持的 glTF 顶点类型');
  const stride=view.byteStride||ctor.BYTES_PER_ELEMENT*n;
@@ -39,8 +39,8 @@ export async function loadCatGLB(url,{signal}={}){
   pos+=length;
  }
  if(!json||!binary||json.asset?.version!=='2.0')throw Error('GLB 缺少模型数据');
- if((json.buffers||[]).length!==1)throw Error('P0.4 仅支持一个 GLB buffer');
- if(json.extensionsRequired?.length)throw Error('P0.4 尚不支持此模型需要的 glTF 扩展');
+ if((json.buffers||[]).length!==1)throw Error('当前测试加载器仅支持一个 GLB buffer');
+ if(json.extensionsRequired?.length)throw Error('当前测试加载器尚不支持此模型需要的 glTF 扩展');
  if(json.skins?.length||json.animations?.length)throw Error('此原型尚不支持 glTF 蒙皮与动画片段，需专业动画加载器');
  const meshes=(json.meshes||[]).map((m,index)=>{
   return (m.primitives||[]).map(prim=>{
@@ -49,7 +49,7 @@ export async function loadCatGLB(url,{signal}={}){
    let normals=prim.attributes.NORMAL===undefined?null:readAccessor(json,binary,prim.attributes.NORMAL);
    const indices=prim.indices===undefined?Array.from({length:positions.length/3},(_,i)=>i):readAccessor(json,binary,prim.indices);
    if(positions.length%3||normals&&normals.length!==positions.length ||indices.length%3)throw Error('模型网格属性不完整');
-   if(positions.length/3>65535)throw Error('P0.4 单网格顶点数量不能超过65535');
+   if(positions.length/3>65535)throw Error('当前测试加载器单网格顶点数量不能超过65535');
    for(const idx of indices)if(idx<0||idx>=positions.length/3)throw Error('模型网格索引越界');
    if(!normals){
     // A legal glTF mesh may omit NORMAL; calculate smooth vertex normals.
@@ -65,7 +65,7 @@ export async function loadCatGLB(url,{signal}={}){
    }
    const mtl=json.materials?.[prim.material||0]||{};
    const pbr=mtl.pbrMetallicRoughness||{};
-   return {name:m.name||`Mesh${index}`,positions,normals,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor||0,doubleSided:!!mtl.doubleSided};
+   return {name:m.name||`Mesh${index}`,positions,normals,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,doubleSided:!!mtl.doubleSided};
   });
  });
  const nodes=(json.nodes||[]).map(n=>({name:n.name||'',mesh:n.mesh,children:n.children||[],matrix:n.matrix||null,translation:n.translation||[0,0,0],rotation:n.rotation||[0,0,0,1],scale:n.scale||[1,1,1]}));

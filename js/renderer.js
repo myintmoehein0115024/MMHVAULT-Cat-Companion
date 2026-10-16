@@ -1,4 +1,4 @@
-/* Black Gold Cat P0.3 — standalone realtime feline sculpt and fur silhouette study.
+/* Black Gold Cat P0.5 — shared standalone WebGL2 core with roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    NOT the final cinematic / professionally skinned GLB. No external CDNs. */
 const PI=Math.PI;
@@ -107,20 +107,35 @@ const FRAG=`#version 300 es
 precision highp float;
 in vec3 vN,vW;
 uniform vec3 uColor;
-uniform float uMetal,uGlow,uFur,uAlpha;
+uniform float uMetal,uGlow,uFur,uAlpha,uRough;
 out vec4 frag;
-void main(){vec3 n=normalize(vN);vec3 key=normalize(vec3(-0.52,1.65,2.2));vec3 rim=normalize(vec3(1.3,.7,-1.6));float a=max(dot(n,key),0.0),b=max(dot(n,rim),0.0);float glow=pow(1.0-max(dot(n,normalize(vec3(0.0,.6,2.1))),0.0),2.4);
-vec3 color=uColor*(.32+.76*a)+uColor*.12*b+vec3(1.0,.59,.23)*glow*(.14+.30*uMetal)+vec3(1.0,.74,.36)*uGlow;
-float spec=pow(max(dot(n,normalize(key+normalize(vec3(.0,1.0,2.8)))),0.),42.0);
-color+=vec3(1.0,.81,.52)*spec*(.04+uMetal*.45);
-float grain=sin(vW.x*107.0+vW.z*129.0)*sin(vW.y*89.0-vW.z*61.0);
-color*=1.0+uFur*grain*.10;
-frag=vec4(pow(max(color,vec3(.0)),vec3(.92)),uAlpha); }`;
+void main(){
+ vec3 n=normalize(vN);
+ vec3 light=normalize(vec3(-.52,1.65,2.2));
+ vec3 fill=normalize(vec3(1.0,.76,-1.25));
+ vec3 eye=normalize(vec3(0.0,.62,2.9));
+ vec3 halfVec=normalize(light+eye);
+ float key=max(dot(n,light),0.0),bounce=max(dot(n,fill),0.0);
+ float rough=clamp(uRough,.065,1.0),metal=clamp(uMetal,0.0,1.0);
+ // Roughness controls highlight size: broad matte coat vs tight glossy eyes / gold.
+ float shininess=mix(128.0,7.0,rough*rough);
+ float spec=pow(max(dot(n,halfVec),0.0),shininess);
+ float fres=pow(1.0-max(dot(n,eye),0.0),4.0);
+ vec3 diffuse=uColor*(.43+.69*key+.18*bounce)*(1.0-metal*.62);
+ vec3 f0=mix(vec3(.045),uColor,metal);
+ vec3 F=f0+(vec3(1.0)-f0)*pow(1.0-max(dot(halfVec,eye),0.0),5.0);
+ vec3 reflection=spec*F*(.35+key*.65)*mix(.92,.36,rough);
+ vec3 warmRim=vec3(1.0,.58,.20)*fres*(.09+.14*metal+.025*uFur);
+ vec3 color=diffuse+reflection+warmRim+vec3(1.0,.76,.36)*uGlow;
+ float grain=sin(vW.x*107.0+vW.z*129.0)*sin(vW.y*89.0-vW.z*61.0);
+ color*=1.0+uFur*grain*.075;
+ frag=vec4(pow(max(color,vec3(.0)),vec3(.92)),uAlpha);
+ }`;
 function shader(gl,source,type){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
 function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT,gl.VERTEX_SHADER));gl.attachShader(p,shader(gl,FRAG,gl.FRAGMENT_SHADER));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
 export class CatRenderer{
  constructor(canvas,options={}){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
-  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
+  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
   this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
@@ -137,7 +152,7 @@ export class CatRenderer{
    this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);
   }
  }
- draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
+ draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1,rough=.82){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.uniform1f(this.loc.uRough,rough);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
  ball(parent,point,size,color,metal=0,extra=[]){this.draw('sphere',mat(parent,T(...point),...extra,S(...size)),color,metal);}
  ear(parent,side,time){const pitch=.045*Math.sin(time*1.8+side),p=mat(parent,T(side*.34,.39,-.12),RZ(-side*.08),RX(pitch));this.draw('ear',p,'#0c1017');this.draw('ear',mat(p,T(0,.06,.076),S(.62,.72,.36)),'#995b43',0,.02);}
  drawCat(mind,time){const g=this.gl;

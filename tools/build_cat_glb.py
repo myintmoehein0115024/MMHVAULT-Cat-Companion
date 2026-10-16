@@ -1,11 +1,11 @@
 """Original, self-contained stylized black-gold cat GLB test asset.
-This is a 3D authored prototype, not film-quality groomed fur or professional skinned model.
+This is a 3D authored prototype with hinged limbs and separate eyelids, not film groomed fur or weighted skin.
 All geometry and materials are generated locally without third-party art assets.
 """
 import numpy as np, trimesh, math, random, os, json
 from trimesh.transformations import translation_matrix
-OUT=os.path.join(os.path.dirname(os.path.dirname(__file__)),'models','black-gold-cat-p04.glb')
-sc=trimesh.Scene(); rng=random.Random(2404)
+OUT=os.path.join(os.path.dirname(os.path.dirname(__file__)),'models','black-gold-cat-p05.glb')
+sc=trimesh.Scene(); rng=random.Random(2405)
 COL={
  'coat':(10,10,17),'fur':(19,16,21),'charcoal':(26,23,27),'gold':(200,132,53),
  'goldDark':(112,70,30),'amber':(245,165,52),'amberBright':(255,198,93),
@@ -119,6 +119,10 @@ for side,name in [(-1,'Left'),(1,'Right')]:
  ball('Pupil'+name,[0,0,.005],[.049,.105,.010],parent='PupilPivot'+name,color='eyeBlack',sub=3,metal=.01,rough=.12)
  ball('EyeSpark'+name,[-.036,.05,.017],[.020,.027,.010],parent='PupilPivot'+name,color='highlight',sub=2,rough=.15)
  ball('EyeSparkSmall'+name,[.044,-.041,.014],[.009,.01,.004],parent='PupilPivot'+name,color='highlight',sub=1,rough=.15)
+ # Dedicated eyelid controller: translates down on blink, independent of iris.
+ node('UpperLid'+name,'EyePivot'+name,(0,.174,.077))
+ ball('UpperLidMesh'+name,[0,0,0],[.155,.038,.036],parent='UpperLid'+name,color='coat',sub=3)
+
  ball('Muzzle'+name,[side*.12,-.22,.44],[.155,.102,.12],parent='HeadPivot',color='cream',sub=3)
  for j in range(3):
   yy=-.185-j*.038
@@ -130,17 +134,23 @@ ball('Chin',[0,-.303,.405],[.17,.075,.104],parent='HeadPivot',color='fur',sub=3)
 ball('Collar',[0,.77,.51],[.26,.056,.081],color='goldDark',sub=3,metal=.7,rough=.25)
 ball('Medallion',[0,.645,.69],[.097,.104,.038],color='gold',sub=3,metal=.8,rough=.23)
 ball('MedallionInset',[0,.645,.724],[.063,.069,.010],color='goldDark',sub=3,metal=.3,rough=.30)
-# legs: independently animatable limb and paw roots
+# P0.5 two-segment quadruped leg rig. This is an articulated node hierarchy
+# (shoulder/hip -> elbow/hock -> paw), not a weighted / skinned armature.
+# Paw origins are grounded in the rest pose, and toe masses rotate with the paw.
 for side,name in [(-1,'Left'),(1,'Right')]:
  for front,segment in [(True,'Front'),(False,'Back')]:
   key=segment+name
   z=.46 if front else -.60
   x=side*(.34 if front else .39)
-  node('Leg'+key,'CatRoot',(x,.50,z))
-  ball('LegMesh'+key,[0,-.15,0],[.145,.31,.17],parent='Leg'+key,color='coat' if front else 'fur',sub=3)
-  node('Paw'+key,'Leg'+key,(0,-.34,.12))
-  ball('PawMesh'+key,[0,-.015,.03],[.178,.113,.195],parent='Paw'+key,color='fur',sub=3)
-  for i in [-1,0,1]:ball('Toe'+key+str(i),[i*.096,-.046,.188],[.053,.044,.08],parent='Paw'+key,color='goldDark' if i==0 else 'cream',sub=2)
+  node('Leg'+key,'CatRoot',(x,.63,z))
+  ball('UpperLeg'+key,[0,-.135,.005],[(.156 if front else .172),.248,.181],parent='Leg'+key,color='coat' if front else 'fur',sub=3)
+  # Joint pivots: the paired meshes move with their respective hinges.
+  node('Knee'+key,'Leg'+key,(0,-.260,.018 if front else -.015))
+  ball('LowerLeg'+key,[0,-.115,.035],[.146,.193,.151],parent='Knee'+key,color='coat' if front else 'fur',sub=3)
+  node('Paw'+key,'Knee'+key,(0,-.235,.105))
+  ball('PawMesh'+key,[0,-.026,.04],[.185,.117,.196],parent='Paw'+key,color='fur',sub=3)
+  for i in [-1,0,1]:
+   ball('Toe'+key+str(i),[i*.101,-.048,.193],[.049,.044,.084],parent='Paw'+key,color='goldDark' if i==0 else 'cream',sub=2)
 # tail segmented chain, not a decorative immobile object
 node('TailRoot','CatRoot',(0,.92,-.76))
 ball('TailBase',[0,.04,-.12],[.175,.176,.31],parent='TailRoot',color='coat',sub=3)
