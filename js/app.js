@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js?v=p08';
-import {GLBCatRenderer} from './glb-renderer.js?v=p08';
+import {CatRenderer} from './renderer.js?v=p09';
+import {GLBCatRenderer} from './glb-renderer.js?v=p09';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -31,6 +31,7 @@ function render(ts){if(!running||document.hidden){frame=0;return;}
   $('stateCaption').textContent=mind.status;
   $('directionLabel').textContent=mind.direction;
   $('interactionLabel').textContent=mind.interaction;
+  $('transitionLabel').textContent=mind.poseTransition;
   if(++frameCount>=30){$('fps').textContent=Math.round(1000*frameCount/Math.max(1,ts-frameWindow))+' FPS';frameCount=0;frameWindow=ts;}
   frame=requestAnimationFrame(render);
 }
@@ -60,7 +61,7 @@ async function start(){
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P0.8 GLB 加载成功：躯干与四足连续蒙皮 + 独立尾巴蒙皮；脸部保留分层表情。仍不是电影级角色资产';
+    assetStatus.title='P0.9 动作混合引擎 + P0.8 全身GPU蒙皮模型。仍属程序化动作原型，非专业动画剪辑或电影级角色';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

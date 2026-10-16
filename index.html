@@ -5,23 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07121d">
   <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
-  <title>Black Gold Cat P0.8 — GPU蒙皮与动作实验室</title>
-  <link rel="stylesheet" href="./css/style.css?v=p08">
+  <title>Black Gold Cat P0.9 — 自然动作过渡实验室</title>
+  <link rel="stylesheet" href="./css/style.css?v=p09">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 0.8 · 躯干与四足蒙皮</span>
+      <span class="release">Prototype 0.9 · 动作平滑过渡</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
-          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P0.8 将躯干和四足连接成一层连续蒙皮网格，保留真实GPU尾巴蒙皮、面部表情、自动转身与落脚实验。这仍是技术原型，专业角色拓扑、毛发和动画片段尚待制作。</p></div>
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P0.9 加入渐进转身、平滑动作权重及更合理的着地／抬爪步态。沿用 P0.8 全身蒙皮 GLB，这仍是程序化3D技术原型，不是电影级角色或专业动作剪辑。</p></div>
           <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
-          <canvas id="catCanvas" aria-label="可互动的实时3D黑金猫造型与动作原型">浏览器需要支持 Canvas 和 WebGL2。</canvas>
+          <canvas id="catCanvas" aria-label="实时3D黑金猫自主步态与动作平滑过渡原型">浏览器需要支持 Canvas 和 WebGL2。</canvas>
           <div class="stage-shine"></div>
           <div class="corner-meta"><span id="assetStatus">载入独立 GLB 模型中…</span><span id="fps">— FPS</span></div>
           <div class="stage-caption" role="status"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
@@ -43,23 +43,23 @@
             <button type="button" id="restBtn"><span>☾</span> 趴下休息</button>
             <button type="button" id="lookBtn"><span>◉</span> 看向我</button>
           </div>
-          <div class="status"><div><span>当前行为</span><strong id="stateLabel">初始化中</strong></div><div><span>自动朝向</span><strong id="directionLabel">正面</strong></div><div><span>宠物响应</span><strong id="interactionLabel">等待互动</strong></div></div>
+          <div class="status"><div><span>当前行为</span><strong id="stateLabel">初始化中</strong></div><div><span>自动朝向</span><strong id="directionLabel">正面</strong></div><div><span>动作过渡</span><strong id="transitionLabel">初始化中</strong></div><div><span>宠物响应</span><strong id="interactionLabel">等待互动</strong></div></div>
         </div>
         <div class="panel design-panel">
           <span class="eyebrow">FINAL ART TARGET</span><h2>唯一的黑金幼猫</h2>
           <img src="./assets/black-gold-cat-reference.webp" alt="最终黑金幼猫外观参考图：精致、可爱、黑金色，电影动画风" loading="lazy">
-          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P0.8 已加载包含躯干四足连续蒙皮与独立尾巴蒙皮的 <code>.glb</code> 试验模型；专业影视级毛发与骨骼动画尚未完成。</p>
+          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P0.9 沿用具备两组GPU蒙皮的 <code>.glb</code> 试验模型，新增程序化动作混合与脚步轨迹；尚无专业动画剪辑和电影级毛发。</p>
         </div>
         <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
           <div class="milestone"><span class="done">✓</span><div><strong>独立网站、GLB关节与材质实验</strong><small>连续躯干／四足蒙皮、三关节尾巴GPU蒙皮、落脚IK原型与面部表情</small></div></div>
           <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>专业角色拓扑、UV和PBR毛发材质，以及完整动作剪辑</small></div></div>
-          <div class="milestone"><span class="pending">3</span><div><strong>动画与场景自主行为</strong><small>正式地面锁脚、动画片段交叉混合、转身、睡眠、唤醒</small></div></div>
+          <div class="milestone"><span class="pending">3</span><div><strong>专业动画剪辑与更完整的地面锁脚</strong><small>当前已加入程序化动作平滑过渡和两段脚步轨迹；正式 glTF 动画剪辑、速度匹配与世界坐标锁脚仍待开发</small></div></div>
           <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
         </div>
       </aside>
     </section>
     <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
   </main>
-  <script type="module" src="./js/app.js?v=p08"></script>
+  <script type="module" src="./js/app.js?v=p09"></script>
 </body>
 </html>
