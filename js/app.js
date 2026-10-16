@@ -1,5 +1,5 @@
 import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js';
+import {CatRenderer} from './renderer.js?v=p03';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn');
