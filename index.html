@@ -5,23 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07121d">
   <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
-  <title>Black Gold Cat P1.2 — 黑金幼猫外观精修</title>
-  <link rel="stylesheet" href="./css/style.css?v=p11">
+  <title>Black Gold Cat P1.3 — 实测视觉修正</title>
+  <link rel="stylesheet" href="./css/style.css?v=p13">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 1.2 · 猫脸/毛发/材质优化</span>
+      <span class="release">Prototype 1.3 · 实测造型/镜头修正</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
-          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P1.2 精修猫咪脸型、大眼睛、耳缘与胸前毛束，改善黑金毛色和琥珀眼睛的实时光照。P1.1 的自主走动、坐姿、六段动画与响应式布局继续保留。仍是3D原型，不是电影级毛发模型。</p></div>
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P1.3 根据实测截图修正：缩短头脸与耳缘尖刺毛束，降低棕色块面，调整幼猫脸型及镜头距离，让手机和电脑能更清楚地看到猫咪。自主行为、坐姿、六段动画及响应式布局保留。仍属于3D角色原型。</p></div>
           <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
-          <canvas id="catCanvas" aria-label="实时3D黑金猫：P1.2黑金猫脸、琥珀眼、毛发层次与自主行为实验">浏览器需要支持 Canvas 和 WebGL2。</canvas>
+          <canvas id="catCanvas" aria-label="实时3D黑金猫：P1.3毛发尖刺、脸型、材质和镜头调整与自主行为实验">浏览器需要支持 Canvas 和 WebGL2。</canvas>
           <div class="stage-shine"></div>
           <div class="corner-meta"><span id="assetStatus">载入独立 GLB 模型中…</span><span id="fps">— FPS</span></div>
           <div class="stage-caption" role="status"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
@@ -49,18 +49,18 @@
         <div class="panel design-panel">
           <span class="eyebrow">FINAL ART TARGET</span><h2>唯一的黑金幼猫</h2>
           <img src="./assets/black-gold-cat-reference.webp" alt="最终黑金幼猫外观参考图：精致、可爱、黑金色，电影动画风" loading="lazy">
-          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P1.2 的实时模型已调整猫脸、眼睛、耳缘毛发、脸颊轮廓和黑金材质，继续使用6段 <code>glTF</code> 关键帧、双GPU蒙皮及坐姿／落脚逻辑。仍没有电影级真实毛发、专业UV贴图或完整商业级角色动画。</p>
+          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P1.3 优先纠正了截图中尖刺毛发、棕色躯干、细长耳朵和猫咪过小的问题，继续使用6段 <code>glTF</code> 关键帧、双GPU蒙皮及坐姿／落脚逻辑。仍没有电影级真实毛发、专业UV贴图或完整商业级角色动画。</p>
         </div>
         <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
           <div class="milestone"><span class="done">✓</span><div><strong>独立网站、GLB关节与材质实验</strong><small>连续躯干／四足蒙皮、三关节尾巴GPU蒙皮、落脚IK原型与面部表情</small></div></div>
           <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>进一步制作专业拓扑、UV纹理、真实毛发贴图和精细角色动画</small></div></div>
-          <div class="milestone"><span class="done">✓</span><div><strong>GLB关键帧剪辑加载及混合基础</strong><small>六段内嵌 glTF 关键帧剪辑、坐姿与基础脚掌约束已保留；P1.2着重改善可见外观，专业绑定、真实毛发和严谨锁脚仍待开发</small></div></div>
+          <div class="milestone"><span class="done">✓</span><div><strong>GLB关键帧剪辑加载及混合基础</strong><small>六段内嵌 glTF 关键帧剪辑、坐姿与基础脚掌约束已保留；P1.3着重解决实测画面的可见缺陷，专业绑定、真实毛发和严谨锁脚仍待开发</small></div></div>
           <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
         </div>
       </aside>
     </section>
     <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
   </main>
-  <script type="module" src="./js/app.js?v=p12"></script>
+  <script type="module" src="./js/app.js?v=p13"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* Black Gold Cat P1.2 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
+/* Black Gold Cat P1.3 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */
 const PI=Math.PI;
@@ -141,17 +141,18 @@ void main(){
  float spec=pow(max(dot(n,halfVec),0.0),shininess);
  float fres=pow(1.0-max(dot(n,eye),0.0),4.0);
  vec3 base=mix(uColor,vVertexColor,clamp(uVertexBlend,0.0,1.0));
- vec3 diffuse=base*(.49+.67*key+.20*bounce)*(1.0-metal*.62);
+ vec3 diffuse=base*(.63+.68*key+.22*bounce)*(1.0-metal*.62);
  vec3 f0=mix(vec3(.045),base,metal);
  vec3 F=f0+(vec3(1.0)-f0)*pow(1.0-max(dot(halfVec,eye),0.0),5.0);
  vec3 reflection=spec*F*(.35+key*.65)*mix(.92,.36,rough);
  // Satin-like fur receives a broader gold edge light than hard surfaces.
  // It is deliberately subtle so the coat stays black instead of turning gold.
- float furHalo=(.025+.088*uFur)*pow(fres,.68);
- vec3 warmRim=vec3(.98,.57,.24)*(fres*(.058+.12*metal)+furHalo);
- vec3 color=diffuse+reflection+warmRim+vec3(1.0,.76,.36)*uGlow;
+ float furHalo=(.013+.057*uFur)*pow(fres,1.35);
+ vec3 warmRim=vec3(.97,.64,.36)*(fres*(.038+.12*metal)+furHalo);
+ vec3 coolFill=vec3(.025,.033,.051)*(1.0-metal)*(.6+.4*max(n.y,0.0));
+ vec3 color=diffuse+reflection+warmRim+coolFill+vec3(1.0,.76,.36)*uGlow;
  float grain=sin(vW.x*107.0+vW.z*129.0)*sin(vW.y*89.0-vW.z*61.0);
- color*=1.0+uFur*grain*.052;
+ color*=1.0+uFur*grain*.030;
  // Procedural iris fibers: inexpensive local-space detailing on the existing
  // amber mesh, without an external texture request. No effect on pupils.
  if(uEyeAccent>.5){
@@ -293,8 +294,10 @@ export class CatRenderer{
   const portrait=ratio<.9;
   // Mobile camera gets closer for legible face/eyes; walking range is limited
   // separately by CatMind so the full kitten stays visible.
-  const cameraZ=portrait?Math.max(5.55,4.0/Math.max(.7,ratio)):5.8;
-  g.uniformMatrix4fv(this.loc.uView,false,lookAt([0,portrait?2.18:2.0,cameraZ],[0,.88,0]));
+  // Framing revised against desktop + narrow-phone user screenshots: make the kitten
+  // the visual focus without cutting off ears, paws or the animated tail.
+  const cameraZ=portrait?5.00+Math.max(0,.82-ratio)*2.2:4.60;
+  g.uniformMatrix4fv(this.loc.uView,false,lookAt([0,portrait?1.85:1.87,cameraZ],[0,.98,0]));
   this.drawCat(mind,time);
  }
  dispose(){const g=this.gl;if(!g)return;for(const m of Object.values(this.meshes)){g.deleteVertexArray(m.vao);if(m.vertexBuffer)g.deleteBuffer(m.vertexBuffer);if(m.indexBuffer)g.deleteBuffer(m.indexBuffer);}g.deleteProgram(this.shader);}

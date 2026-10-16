@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
-import {CatRenderer} from './renderer.js?v=p12';
-import {GLBCatRenderer} from './glb-renderer.js?v=p12';
+import {CatRenderer} from './renderer.js?v=p13';
+import {GLBCatRenderer} from './glb-renderer.js?v=p13';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -10,7 +10,7 @@ const limit=(v,min,max)=>Math.max(min,Math.min(max,v));
 function updateStageBounds(){
   const box=canvas.getBoundingClientRect();
   // Smaller roaming area on tall phone screens keeps all four paws in the frame.
-  mind.travelLimit=(box.width < 540 || box.width/Math.max(1,box.height)<.83) ? .65 : 1.15;
+  mind.travelLimit=(box.width < 540 || box.width/Math.max(1,box.height)<.83) ? .30 : 1.05;
   mind.x=limit(mind.x,-mind.travelLimit,mind.travelLimit);
   mind.targetX=limit(mind.targetX,-mind.travelLimit,mind.travelLimit);
 }
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p12.glb?v=p12');
+    await newRenderer.load('./models/black-gold-cat-p13.glb?v=p13');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P1.2 改善了GLB猫脸、耳缘、胸毛、琥珀眼睛及实时着色；保留六段关键帧和P1.1步态。仍属于实时3D风格化原型。';
+    assetStatus.title='P1.3 根据实测截图缩短尖刺毛束、调暗棕色、调整猫脸耳朵、放大镜头。保留六段GLB动画与两套GPU蒙皮；仍是实时3D原型。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
