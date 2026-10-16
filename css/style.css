@@ -168,3 +168,6 @@ body.cat-focus { overflow: hidden; }
   .actions button, .focus-btn, .toggle span, .toggle span:after { transition: none; }
   .actions button:hover { transform: none; }
 }
+
+/* P0.4 GLB asset status: prevent long model labels from widening tiny screens. */
+.corner-meta #assetStatus { min-width: 0; max-width: calc(100% - 62px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

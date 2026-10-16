@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07121d">
   <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
-  <title>Black Gold Cat — 独立3D行为实验室</title>
-  <link rel="stylesheet" href="./css/style.css?v=p03">
+  <title>Black Gold Cat P0.4 — 原创GLB模型实验室</title>
+  <link rel="stylesheet" href="./css/style.css?v=p04">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 0.3 · 猫咪造型与毛发轮廓研究</span>
+      <span class="release">Prototype 0.4 · 独立GLB角色模型</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
-          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>本版升级猫咪造型、琥珀眼睛、立体耳朵和毛发轮廓，继续测试自主走动与自然互动。专业电影级 GLB 角色仍需另行制作。</p></div>
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>本版开始使用真正独立的 GLB 角色文件：猫头、耳朵、四肢与尾巴可分别运动。仍是自制分层3D原型，电影级毛发、蒙皮骨骼和专业动画需后续制作。</p></div>
           <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
           <canvas id="catCanvas" aria-label="可互动的实时3D黑金猫造型与动作原型">浏览器需要支持 Canvas 和 WebGL2。</canvas>
           <div class="stage-shine"></div>
-          <div class="corner-meta"><span>实时3D · 毛发轮廓研究 · 自主行为</span><span id="fps">— FPS</span></div>
+          <div class="corner-meta"><span id="assetStatus">载入独立 GLB 模型中…</span><span id="fps">— FPS</span></div>
           <div class="stage-caption" role="status"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
           <div class="stage-error" id="error" hidden></div>
         </div>
@@ -48,11 +48,11 @@
         <div class="panel design-panel">
           <span class="eyebrow">FINAL ART TARGET</span><h2>唯一的黑金幼猫</h2>
           <img src="./assets/black-gold-cat-reference.webp" alt="最终黑金幼猫外观参考图：精致、可爱、黑金色，电影动画风" loading="lazy">
-          <p>上面是<strong>角色美术参考</strong>，不是实时3D模型。最终会使用专门制作的 <code>.glb</code> 模型、毛发材质和动画资产。</p>
+          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P0.4 已加载独立 <code>.glb</code> 试验模型；专业影视级毛发与骨骼动画尚未完成。</p>
         </div>
         <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
-          <div class="milestone"><span class="done">✓</span><div><strong>独立网站与实时3D演示</strong><small>已加入猫脸、耳朵、胡须、毛束和四足造型细化</small></div></div>
-          <div class="milestone"><span class="pending">2</span><div><strong>专业高精度3D角色</strong><small>独立 GLB、专业拓扑、UV贴图、表情及四足骨骼</small></div></div>
+          <div class="milestone"><span class="done">✓</span><div><strong>独立网站与GLB分层模型</strong><small>真实.glb角色文件、独立头尾肢体节点、失败回退和行为驱动</small></div></div>
+          <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>制作正式角色：专业拓扑、UV/PBR毛发贴图、蒙皮骨骼与面部表情</small></div></div>
           <div class="milestone"><span class="pending">3</span><div><strong>动画与场景自主行为</strong><small>完整行走循环、IK落脚、转身、睡眠、唤醒</small></div></div>
           <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
         </div>
@@ -60,6 +60,6 @@
     </section>
     <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
   </main>
-  <script type="module" src="./js/app.js?v=p03"></script>
+  <script type="module" src="./js/app.js?v=p04"></script>
 </body>
 </html>

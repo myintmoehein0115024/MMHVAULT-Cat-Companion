@@ -1,8 +1,9 @@
 import {CatMind} from './behavior.js';
-import {CatRenderer} from './renderer.js?v=p03';
+import {CatRenderer} from './renderer.js?v=p04';
+import {GLBCatRenderer} from './glb-renderer.js?v=p04';
 
 const $=id=>document.getElementById(id);
-const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn');
+const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
 const mind=new CatMind();
 let renderer,frame,prev=0,frameCount=0,frameWindow=0,boot=performance.now(),running=true;
 const limit=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -21,7 +22,7 @@ function setFocus(on){
   updateStageBounds();
   renderer?.resize();
 }
-function fail(message){health.textContent='3D 暂不可用';health.style.color='#ffbeac';error.hidden=false;error.textContent=String(message);}
+function fail(message){health.textContent='3D 暂不可用';health.style.color='#ffbeac';error.hidden=false;error.textContent=String(message);assetStatus.textContent='WebGL 不可用';}
 function render(ts){if(!running||document.hidden){frame=0;return;}
   const time=(ts-boot)/1000,dt=Math.min(.05,Math.max(0,(ts-prev)/1000));prev=ts;
   mind.update(time,dt);
@@ -50,4 +51,29 @@ document.addEventListener('visibilitychange',()=>{
   else if(!frame){prev=performance.now();frameWindow=prev;frameCount=0;frame=requestAnimationFrame(render);}
 });
 window.addEventListener('pagehide',()=>{running=false;cancelAnimationFrame(frame);renderer?.dispose();},{once:true});
-try{renderer=new CatRenderer(canvas);updateStageBounds();health.innerHTML='<span class="status-dot"></span> WebGL2 已就绪';frameWindow=performance.now();frame=requestAnimationFrame(render);}catch(e){fail(e.message);}
+async function start(){
+  if(!running)return;
+  let newRenderer=null;
+  try{
+    newRenderer=new GLBCatRenderer(canvas);
+    await newRenderer.load('./models/black-gold-cat-p04.glb?v=p04');
+    if(!running){newRenderer.dispose();return;}
+    renderer=newRenderer;
+    assetStatus.textContent=renderer.assetName;
+    assetStatus.title='真实 GLB 文件加载成功；该模型仍是原创分层原型，并非专业蒙皮动画电影模型';
+  }catch(assetError){
+    // Make sure old resources are disposed before reusing the canvas context.
+    try{newRenderer?.dispose();}catch(_e){}
+    if(!running)return;
+    console.warn('GLB 模型加载失败，回退原程序化角色：',assetError);
+    try{
+      renderer=new CatRenderer(canvas);
+      assetStatus.textContent='备用程序化3D（GLB加载失败）';
+      assetStatus.title=String(assetError.message||assetError);
+    }catch(error){fail(error.message);return;}
+  }
+  updateStageBounds();
+  health.innerHTML='<span class="status-dot"></span> WebGL2 已就绪';
+  frameWindow=performance.now();prev=frameWindow;frame=requestAnimationFrame(render);
+}
+start();
