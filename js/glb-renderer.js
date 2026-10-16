@@ -1,6 +1,6 @@
-/* Black Gold Cat P1.4 — velvet coat, facial tufts and iris shader; native glTF animation clips blended over GPU-skinned body and tail.
+/* Black Gold Cat P1.5 — cupped kitten ears and matte velvet coat; native glTF animation clips blended over GPU-skinned body and tail.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
-import {CatRenderer} from './renderer.js?v=p14';
+import {CatRenderer} from './renderer.js?v=p15';
 import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
 import {loadCatGLB} from './glb-loader.js?v=p11';
 import {sampleAnimationLayers} from './clip-player.js?v=p11';
@@ -51,11 +51,11 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.4 黑金灵猫设定一致性修正版';this.footPlant=new FootPlantCoordinator();}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.5 圆润立体猫耳与深黑绒毛修正版';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
-   throw Error('P1.4 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p14.glb 是否上传完整');
+   throw Error('P1.5 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p15.glb 是否上传完整');
   const meshes=model.meshes.map(prims=>prims.map(p=>{
    const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
     jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
@@ -65,7 +65,7 @@ export class GLBCatRenderer extends CatRenderer{
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:furry ? .94 : 0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds,eyeAccent:/EyeIris|EyeRing/.test(p.name)?1:0};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
-  this.assetName='P1.4 · 官方造型参考/圆脸黑金绒毛/琥珀眼 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
+  this.assetName='P1.5 · 立体猫耳/消除棕色波纹/深黑绒毛 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;

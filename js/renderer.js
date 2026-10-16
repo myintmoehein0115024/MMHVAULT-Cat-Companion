@@ -1,4 +1,4 @@
-/* P1.4: approved black-gold concept, soft object-space velvet strands and golden rim-light. */
+/* P1.5: soft matte black velvet coat. Suppress bronze zebra waves; warm rim only at silhouette. */
 /* Black Gold Cat P1.3 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */
@@ -148,21 +148,20 @@ void main(){
  vec3 reflection=spec*F*(.35+key*.65)*mix(.92,.36,rough);
  // Satin-like fur receives a broader gold edge light than hard surfaces.
  // It is deliberately subtle so the coat stays black instead of turning gold.
- float furHalo=(.016+.18*uFur)*pow(fres,1.52);
+ float furHalo=(.014+.088*uFur)*pow(fres,2.05);
  // Gold only at the contour: dark velvet remains nearly black at the center.
  float backRim=max(dot(n,normalize(vec3(-.55,.95,-1.8))),0.0);
- vec3 warmRim=vec3(1.0,.67,.26)*(fres*(.045+.14*metal)+furHalo*(.75+.50*backRim));
+ vec3 warmRim=vec3(1.0,.67,.26)*(fres*(.032+.14*metal)+furHalo*(.70+.60*backRim));
  vec3 coolFill=vec3(.025,.033,.051)*(1.0-metal)*(.6+.4*max(n.y,0.0));
  vec3 color=diffuse+reflection+warmRim+coolFill+vec3(1.0,.76,.36)*uGlow;
- // Stable, anti-aliased cross-grain gives the rough coat soft fibre depth.
- // Fur anisotropy is object anchored; no flickering time-based texture.
- float strandAngle=dot(vObj,vec3(84.0,19.0,-25.0));
- float strandCurve=sin(dot(vObj,vec3(17.0,52.0,36.0)))*1.15;
- float strandPhase=strandAngle+strandCurve;
- float strandVis=clamp((3.7-fwidth(strandPhase))*.42,0.0,1.0);
- float strand=sin(strandPhase)*sin(dot(vObj,vec3(11.0,63.0,-7.0)));
- color*=1.0+uFur*strandVis*strand*.105;
- color+=uFur*vec3(.12,.075,.036)*pow(fres,2.5)*strandVis*(.5+.5*strand);
+ // Small, low-contrast flecks suggest short velvet hairs without patterned bands.
+ // Strong trigonometric stripes made the P1.4 body look bronze/zebra-striped.
+ // Gold is reserved for silhouette highlights, not painted over the torso.
+ float smallFibre=sin(dot(vObj,vec3(131.0,117.0,86.0)))*
+                   sin(dot(vObj,vec3(157.0,-102.0,123.0)));
+ float fibreAA=clamp((2.4-fwidth(dot(vObj,vec3(131.0,117.0,86.0))))*.26,0.0,1.0);
+ color*=1.0+uFur*fibreAA*smallFibre*.016;
+ color+=uFur*vec3(.07,.048,.024)*pow(fres,3.5)*.075;
  // Procedural iris fibers: inexpensive local-space detailing on the existing
  // amber mesh, without an external texture request. No effect on pupils.
  if(uEyeAccent>.5){

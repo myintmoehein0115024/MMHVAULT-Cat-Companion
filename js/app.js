@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
-import {CatRenderer} from './renderer.js?v=p14';
-import {GLBCatRenderer} from './glb-renderer.js?v=p14';
+import {CatRenderer} from './renderer.js?v=p15';
+import {GLBCatRenderer} from './glb-renderer.js?v=p15';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p14.glb?v=p14');
+    await newRenderer.load('./models/black-gold-cat-p15.glb?v=p15');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P1.4 按用户认可的黑金灵猫设定图调整圆脸、瞳孔、绒毛轮廓、黑金色彩与尾巴，仍是实时3D原型；保留六段GLB动画、两套GPU蒙皮。';
+    assetStatus.title='P1.5 按实测反馈重做立体凹面猫耳、内耳渐层，压低身体棕色波纹，保持两套GPU蒙皮和六段动画；仍是实时3D原型。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
