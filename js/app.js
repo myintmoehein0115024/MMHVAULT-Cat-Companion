@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
-import {CatRenderer} from './renderer.js?v=p11';
-import {GLBCatRenderer} from './glb-renderer.js?v=p11';
+import {CatRenderer} from './renderer.js?v=p12';
+import {GLBCatRenderer} from './glb-renderer.js?v=p12';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p10.glb?v=p11');
+    await newRenderer.load('./models/black-gold-cat-p12.glb?v=p12');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P1.1 基于P1.0 GLB六段关键帧，新增程序化坐姿过渡与地面接触约束。不是专业动画师作品或电影级角色';
+    assetStatus.title='P1.2 改善了GLB猫脸、耳缘、胸毛、琥珀眼睛及实时着色；保留六段关键帧和P1.1步态。仍属于实时3D风格化原型。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

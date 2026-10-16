@@ -1,6 +1,6 @@
-/* Black Gold Cat P1.1 — native glTF animation clips blended over GPU-skinned body and tail.
+/* Black Gold Cat P1.2 — velvet coat, facial tufts and iris shader; native glTF animation clips blended over GPU-skinned body and tail.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
-import {CatRenderer} from './renderer.js?v=p11';
+import {CatRenderer} from './renderer.js?v=p12';
 import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
 import {loadCatGLB} from './glb-loader.js?v=p11';
 import {sampleAnimationLayers} from './clip-player.js?v=p11';
@@ -51,20 +51,20 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.1 坐姿与脚掌接触约束';this.footPlant=new FootPlantCoordinator();}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P1.2 黑金毛发与猫脸优化';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
-   throw Error('P1.0 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p10.glb 是否上传完整');
+   throw Error('P1.2 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p12.glb 是否上传完整');
   const meshes=model.meshes.map(prims=>prims.map(p=>{
    const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
     jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
    const name='glb'+this.entries.length;this.meshes[name]=mesh;this.entries.push(name);
    const metal=clamp(p.metallic??0,0,1),rough=clamp(p.roughness??1,.065,1);
-   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds};
+   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds,eyeAccent:/EyeIris|EyeRing/.test(p.name)?1:0};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
-  this.assetName='P1.1 · '+model.animations.length+'段 GLB 动画 + 坐姿 · '+Math.round(model.bytes/1024)+' KB';
+  this.assetName='P1.2 · 黑金猫脸/毛束/琥珀眼 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -173,10 +173,10 @@ export class GLBCatRenderer extends CatRenderer{
        g.uniform1f(this.loc.uUseSkin,1);
        g.uniformMatrix4fv(this.loc['uJointPalette[0]'],false,skinPalettes[node.skin]);
        // In this standalone demo, skin palette already contains CatRoot motion.
-       this.draw(p.key,I(),p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
+       this.draw(p.key,I(),p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend,p.eyeAccent);
       }else{
        g.uniform1f(this.loc.uUseSkin,0);
-       this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
+       this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend,p.eyeAccent);
       }
       if(p.doubleSided)g.enable(g.CULL_FACE);
     }

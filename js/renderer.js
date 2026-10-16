@@ -1,4 +1,4 @@
-/* Black Gold Cat P0.8 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
+/* Black Gold Cat P1.2 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */
 const PI=Math.PI;
@@ -106,7 +106,7 @@ layout(location=4) in vec4 aJointWeights;
 uniform mat4 uProj,uView,uModel;
 uniform mat4 uJointPalette[16];
 uniform float uUseSkin;
-out vec3 vN,vW,vVertexColor;
+out vec3 vN,vW,vVertexColor,vObj;
 void main(){
  mat4 skin=mat4(1.0);
  if(uUseSkin>.5){
@@ -119,13 +119,14 @@ void main(){
  vW=p.xyz;
  vN=mat3(transpose(inverse(uModel)))*mat3(skin)*aNormal;
  vVertexColor=aVertexColor;
+ vObj=aPos;
  gl_Position=uProj*uView*p;
 }`;
 const FRAG=`#version 300 es
 precision highp float;
-in vec3 vN,vW,vVertexColor;
+in vec3 vN,vW,vVertexColor,vObj;
 uniform vec3 uColor;
-uniform float uMetal,uGlow,uFur,uAlpha,uRough,uVertexBlend;
+uniform float uMetal,uGlow,uFur,uAlpha,uRough,uVertexBlend,uEyeAccent;
 out vec4 frag;
 void main(){
  vec3 n=normalize(vN);
@@ -140,21 +141,34 @@ void main(){
  float spec=pow(max(dot(n,halfVec),0.0),shininess);
  float fres=pow(1.0-max(dot(n,eye),0.0),4.0);
  vec3 base=mix(uColor,vVertexColor,clamp(uVertexBlend,0.0,1.0));
- vec3 diffuse=base*(.43+.69*key+.18*bounce)*(1.0-metal*.62);
+ vec3 diffuse=base*(.49+.67*key+.20*bounce)*(1.0-metal*.62);
  vec3 f0=mix(vec3(.045),base,metal);
  vec3 F=f0+(vec3(1.0)-f0)*pow(1.0-max(dot(halfVec,eye),0.0),5.0);
  vec3 reflection=spec*F*(.35+key*.65)*mix(.92,.36,rough);
- vec3 warmRim=vec3(1.0,.58,.20)*fres*(.09+.14*metal+.025*uFur);
+ // Satin-like fur receives a broader gold edge light than hard surfaces.
+ // It is deliberately subtle so the coat stays black instead of turning gold.
+ float furHalo=(.025+.088*uFur)*pow(fres,.68);
+ vec3 warmRim=vec3(.98,.57,.24)*(fres*(.058+.12*metal)+furHalo);
  vec3 color=diffuse+reflection+warmRim+vec3(1.0,.76,.36)*uGlow;
  float grain=sin(vW.x*107.0+vW.z*129.0)*sin(vW.y*89.0-vW.z*61.0);
- color*=1.0+uFur*grain*.075;
+ color*=1.0+uFur*grain*.052;
+ // Procedural iris fibers: inexpensive local-space detailing on the existing
+ // amber mesh, without an external texture request. No effect on pupils.
+ if(uEyeAccent>.5){
+   float theta=atan(vObj.y,vObj.x);
+   float irisR=length(vec2(vObj.x/.146,vObj.y/.157));
+   float fiber=pow(.5+.5*sin(theta*43.0+irisR*7.0),6.0);
+   float irisMask=smoothstep(.18,.40,irisR)*(1.0-smoothstep(.82,1.15,irisR));
+   color+=irisMask*fiber*vec3(.21,.087,.012);
+   color+=spec*.095*vec3(.93,.74,.40);
+ }
  frag=vec4(pow(max(color,vec3(.0)),vec3(.92)),uAlpha);
  }`;
 function shader(gl,source,type){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
 function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT,gl.VERTEX_SHADER));gl.attachShader(p,shader(gl,FRAG,gl.FRAGMENT_SHADER));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
 export class CatRenderer{
  constructor(canvas,options={}){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
-  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
+  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]','uEyeAccent'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
   this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
@@ -193,7 +207,7 @@ export class CatRenderer{
    this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);
   }
  }
- draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1,rough=.82,vertexBlend=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.uniform1f(this.loc.uRough,rough);g.uniform1f(this.loc.uVertexBlend,vertexBlend);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
+ draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1,rough=.82,vertexBlend=0,eyeAccent=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.uniform1f(this.loc.uRough,rough);g.uniform1f(this.loc.uVertexBlend,vertexBlend);g.uniform1f(this.loc.uEyeAccent,eyeAccent);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
  ball(parent,point,size,color,metal=0,extra=[]){this.draw('sphere',mat(parent,T(...point),...extra,S(...size)),color,metal);}
  ear(parent,side,time){const pitch=.045*Math.sin(time*1.8+side),p=mat(parent,T(side*.34,.39,-.12),RZ(-side*.08),RX(pitch));this.draw('ear',p,'#0c1017');this.draw('ear',mat(p,T(0,.06,.076),S(.62,.72,.36)),'#995b43',0,.02);}
  drawCat(mind,time){const g=this.gl;
