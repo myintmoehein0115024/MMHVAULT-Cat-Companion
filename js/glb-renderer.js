@@ -1,4 +1,4 @@
-/* Black Gold Cat P2.0 — stronger whole-body short velvet fur presence, fuller tail plume, and preserved P1.8 ear/face fixes; native glTF animation clips blended over GPU-skinned body and tail.
+/* Black Gold Cat P2.1 — surface-combed short-fur ribbons replacing radial needle spikes, and preserved P1.8 ear/face fixes; native glTF animation clips blended over GPU-skinned body and tail.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
 import {CatRenderer} from './renderer.js?v=p18';
 import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
@@ -51,11 +51,11 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.0 全身骨骼毛发优化版';this.footPlant=new FootPlantCoordinator();}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.1 毛流软化与全身绒毛修正版';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
-   throw Error('P2.0 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p20.glb 是否上传完整');
+   throw Error('P2.1 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p21.glb 是否上传完整');
   const meshes=model.meshes.map(prims=>prims.map(p=>{
    const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
     jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
@@ -65,7 +65,7 @@ export class GLBCatRenderer extends CatRenderer{
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:furry ? .94 : 0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds,eyeAccent:/EyeIris|EyeRing/.test(p.name)?1:0};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
-  this.assetName='P2.0 · 身体/尾巴骨骼毛束 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
+  this.assetName='P2.1 · 贴身短绒毛/尾巴软绒 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;

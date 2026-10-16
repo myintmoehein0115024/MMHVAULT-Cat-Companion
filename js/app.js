@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
 import {CatRenderer} from './renderer.js?v=p18';
-import {GLBCatRenderer} from './glb-renderer.js?v=p20';
+import {GLBCatRenderer} from './glb-renderer.js?v=p21';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p20.glb?v=p20');
+    await newRenderer.load('./models/black-gold-cat-p21.glb?v=p21');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P2.0 继续保留 P1.8 的耳朵、脸型与头颈修复，重点强化全身骨骼毛束、肩背腰腹轮廓与尾巴蓬松感；两组蒙皮及六段动画保持不变。仍是实时3D原型，不是电影级模型。';
+    assetStatus.title='P2.1 继续保留 P1.8 的耳朵、脸型与头颈修复，修正身体和尾巴的黑刺毛束，改为顺着毛流贴近皮肤的柔和短绒；两组蒙皮及六段动画保持不变。仍是实时3D原型，不是电影级模型。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
