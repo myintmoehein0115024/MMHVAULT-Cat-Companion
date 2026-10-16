@@ -1,5 +1,5 @@
-/* Self-hosted GLB 2.0 geometry loader for the P0.5 articulated prototype.
-   Supports embedded buffer, triangle primitives, node hierarchy, baseColorFactor and metallic-roughness factors.
+/* Self-hosted GLB 2.0 geometry loader for the P0.6 articulated + vertex-color prototype.
+   Supports embedded buffer, triangle primitives, node hierarchy, baseColorFactor, metallic-roughness factors and uncompressed COLOR_0 vertex colors.
    Explicitly does NOT yet support skinned meshes, animation clips, texture maps,
    Draco/KTX2 or full PBR. Future studio assets need a full glTF pipeline. */
 const COMPONENT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
@@ -46,9 +46,10 @@ export async function loadCatGLB(url,{signal}={}){
   return (m.primitives||[]).map(prim=>{
    if(prim.mode!==undefined&&prim.mode!==4)throw Error('只能绘制三角形网格');
    const positions=readAccessor(json,binary,prim.attributes.POSITION);
+   const colors=prim.attributes.COLOR_0===undefined?null:readAccessor(json,binary,prim.attributes.COLOR_0);
    let normals=prim.attributes.NORMAL===undefined?null:readAccessor(json,binary,prim.attributes.NORMAL);
    const indices=prim.indices===undefined?Array.from({length:positions.length/3},(_,i)=>i):readAccessor(json,binary,prim.indices);
-   if(positions.length%3||normals&&normals.length!==positions.length ||indices.length%3)throw Error('模型网格属性不完整');
+   if(positions.length%3||normals&&normals.length!==positions.length ||colors&&colors.length!==positions.length ||indices.length%3)throw Error('模型网格属性不完整');
    if(positions.length/3>65535)throw Error('当前测试加载器单网格顶点数量不能超过65535');
    for(const idx of indices)if(idx<0||idx>=positions.length/3)throw Error('模型网格索引越界');
    if(!normals){
@@ -65,7 +66,7 @@ export async function loadCatGLB(url,{signal}={}){
    }
    const mtl=json.materials?.[prim.material||0]||{};
    const pbr=mtl.pbrMetallicRoughness||{};
-   return {name:m.name||`Mesh${index}`,positions,normals,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,doubleSided:!!mtl.doubleSided};
+   return {name:m.name||`Mesh${index}`,positions,normals,colors,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,doubleSided:!!mtl.doubleSided};
   });
  });
  const nodes=(json.nodes||[]).map(n=>({name:n.name||'',mesh:n.mesh,children:n.children||[],matrix:n.matrix||null,translation:n.translation||[0,0,0],rotation:n.rotation||[0,0,0,1],scale:n.scale||[1,1,1]}));

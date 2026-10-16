@@ -1,8 +1,8 @@
-/* Black Gold Cat P0.5 — modular GLB player with explicit elbow/hock hinges,
-   grounded paw compensation, per-material roughness, expressive eyelids.
-   It is articulated node animation, NOT a professional skinned/IK rig. */
-import {CatRenderer} from './renderer.js?v=p05';
-import {loadCatGLB} from './glb-loader.js?v=p05';
+/* Black Gold Cat P0.6 — modular GLB player with experimental planar two-bone IK,
+   expressive face pivots, per-vertex coat colors and roughness.
+   This is node animation, NOT weighted-skin studio-quality facial/limb rigging. */
+import {CatRenderer} from './renderer.js?v=p06';
+import {loadCatGLB} from './glb-loader.js?v=p06';
 
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const mul=(a,b)=>{const out=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)out[c*4+r]+=a[k*4+r]*b[c*4+k];return out;};
@@ -33,18 +33,33 @@ export function felineJointAngles({step=0,motion=0,crouch=0,mode='idle',modeAge=
  return {hip,knee,paw,walk,lift,greeting};
 }
 
+/** A 2D two-link solver in cat-local Y/Z space. Exact joint geometry matches
+ * Leg -> Knee -> Paw pivot offsets in build_cat_glb_p06.py. Targets are clamped
+ * to reach and the result is finite for all gait phases. No external physics. */
+export function solvePawIK(targetY,targetZ,front=true){
+ const a=[-.260,front?.018:-.015],b=[-.235,.105];
+ const l1=Math.hypot(...a),l2=Math.hypot(...b);
+ const d0=Math.hypot(targetY,targetZ),d=clamp(d0,Math.abs(l1-l2)+.0003,l1+l2-.0008);
+ const phi=Math.atan2(targetZ,targetY),b1=Math.atan2(a[1],a[0]),b2=Math.atan2(b[1],b[0]);
+ // The bent-elbow branch stays close to the neutral rig at rest.
+ const internal=-Math.acos(clamp((d*d-l1*l1-l2*l2)/(2*l1*l2),-1,1));
+ const knee=internal-(b2-b1 < -Math.PI ? b2-b1+2*Math.PI : b2-b1 > Math.PI ? b2-b1-2*Math.PI : b2-b1);
+ const hip=Math.atan2(Math.sin(phi-b1),Math.cos(phi-b1))-Math.atan2(l2*Math.sin(internal),l1+l2*Math.cos(internal));
+ return {hip:clamp(hip,-1.10,1.10),knee:clamp(knee,-1.45,.75),paw:clamp(-hip-knee,-1.25,1.25),reach:d0-d};
+}
+
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.5 关节式 GLB';}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.6 表情与毛色 GLB';}
  async load(url){
   const model=await loadCatGLB(url);
   const meshes=model.meshes.map(prims=>prims.map(p=>{
-   const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices)});
+   const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null});
    const name='glb'+this.entries.length;this.meshes[name]=mesh;this.entries.push(name);
    const metal=clamp(p.metallic??0,0,1),rough=clamp(p.roughness??1,.065,1);
-   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided};
+   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0};
   }));
   this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,roots:model.roots};
-  this.assetName='P0.5 GLB关节猫 · '+Math.round(model.bytes/1024)+' KB · '+model.nodes.length+'节点';
+  this.assetName='P0.6 GLB表情猫 · '+Math.round(model.bytes/1024)+' KB · '+model.nodes.length+'节点';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -53,17 +68,41 @@ export class GLBCatRenderer extends CatRenderer{
   this.draw('ring',combine(T(mind.x,.016,mind.z),S(1.03,1,.78)),'#af8344',.3,.02,0,.52);
   const loaf=clamp(mind.crouch||0,0,1),walk=clamp(mind.motion*2.4,0,1),age=time-(mind.modeAt??time);
   const breath=.005*Math.sin(time*2.05),bodyBob=.008*Math.sin(mind.step*2)*walk;
+  const curious=mind.mode==='look' || mind.mode==='welcome';
+  const happy=mind.mode==='welcome' || mind.mode==='stretch';
+  const smile=happy?1:curious?.35:0;
+  const legCache=new Map();
+  for(const front of [true,false])for(const left of [true,false]){
+   const key=(front?'Front':'Back')+(left?'Left':'Right');
+   const old=felineJointAngles({step:mind.step,motion:mind.motion,crouch:loaf,mode:mind.mode,modeAge:age},front,left);
+   // Use the same diagonal pairing as P0.5; stance paws remain close to the
+   // ground while swing paws lift as they move forwards.
+   const phase=mind.step+((front===left)?0:Math.PI);
+   const forward=Math.sin(phase),swing=Math.max(0,Math.cos(phase));
+   const neutralZ=front?.123:.090;
+   const targetY=-.495 + .112*swing*walk+.012*loaf;
+   const targetZ=neutralZ + .118*forward*walk;
+   const ik=solvePawIK(targetY,targetZ,front);
+   const mix=walk*(1-loaf)* (old.greeting?1-old.greeting:1);
+   const lerp=(a,b)=>a*(1-mix)+b*mix;
+   legCache.set(key,{...old,hip:lerp(old.hip,ik.hip),knee:lerp(old.knee,ik.knee),paw:lerp(old.paw,ik.paw)});
+  }
   const poseFor=node=>{
    const name=node.name;
-   if(name==='CatRoot')return combine(node.base,T(mind.x,.018+breath+bodyBob,mind.z),RY(mind.yaw),S(1,1-.105*loaf,1));
+   if(name==='CatRoot')return combine(node.base,T(mind.x,-.035+breath+bodyBob,mind.z),RY(mind.yaw),S(1,1-.105*loaf,1));
    if(name==='HeadPivot')return combine(node.base,RY(.06*Math.sin(time*.47)+mind.gazeX*.105),RX(-mind.gazeY*.065+.022*Math.sin(time*.55)),RZ(.020*Math.sin(time*.6)));
-   if(name==='EarLeft'||name==='EarRight')return combine(node.base,RZ((name==='EarLeft'?-1:1)*Math.sin(time*1.6)*.032));
+   if(name==='EarLeft'||name==='EarRight')return combine(node.base,RZ((name==='EarLeft'?-1:1)*(Math.sin(time*1.6)*.026+(curious?.030:0))));
+   if(name.startsWith('CheekPivot'))return combine(node.base,T(0,smile*.009,.007*smile),S(1+smile*.025,1+smile*.032,1));
+   if(name==='MouthPivot')return combine(node.base,T(0,smile*.019,smile*.006),S(1+smile*.18,1,1));
+   if(name==='NosePivot')return combine(node.base,T(0,.002*Math.sin(time*2.2)+smile*.005,0));
+   if(name.startsWith('BrowFurPivot'))return combine(node.base,T(0,(curious?.026:0)+.009*Math.sin(time*1.1),0),RZ((name.endsWith('Left')?-1:1)*(curious?.018:0)));
+   if(name.startsWith('LowerLid'))return combine(node.base,T(0,clamp(mind.blink,0,1)*.065+smile*.019,0));
    if(name.startsWith('PupilPivot'))return combine(node.base,T(mind.gazeX*.017,mind.gazeY*.013,0));
-   if(name.startsWith('UpperLid'))return combine(node.base,T(0,-clamp(mind.blink,0,1)*.139,0));
+   if(name.startsWith('UpperLid'))return combine(node.base,T(0,-clamp(mind.blink,0,1)*.130-smile*.016,0));
    if(name.startsWith('EyeIris')||name.startsWith('EyeRing')||name.startsWith('Pupil')||name.startsWith('EyeSpark'))return combine(node.base,S(1,Math.max(.26,1-mind.blink*.70),1));
    if(name.startsWith('Leg')||name.startsWith('Knee')||name.startsWith('Paw')){
     const front=name.includes('Front'),left=name.includes('Left');
-    const angles=felineJointAngles({step:mind.step,motion:mind.motion,crouch:loaf,mode:mind.mode,modeAge:age},front,left);
+    const angles=legCache.get((front?'Front':'Back')+(left?'Left':'Right'));
     if(name.startsWith('Leg'))return combine(node.base,RX(angles.hip),RZ(angles.greeting*.14));
     if(name.startsWith('Knee'))return combine(node.base,RX(angles.knee));
     return combine(node.base,RX(angles.paw));
@@ -78,7 +117,7 @@ export class GLBCatRenderer extends CatRenderer{
    const world=mul(parent,poseFor(node));
    if(node.mesh!==undefined){for(const p of this.model.meshes[node.mesh]){
     if(p.doubleSided)g.disable(g.CULL_FACE);
-    this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough);
+    this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
     if(p.doubleSided)g.enable(g.CULL_FACE);
    }}
    for(const child of node.children)traverse(child,world);

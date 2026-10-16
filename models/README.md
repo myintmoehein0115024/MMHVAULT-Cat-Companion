@@ -14,3 +14,6 @@
 
 
 P0.5：black-gold-cat-p05.glb 增加四条腿的 Knee（肘/跗关节）与眼睑节点，材质支持 roughnessFactor。仍是分层关节式模型，不是真正 skin 蒙皮。
+
+
+P0.6: black-gold-cat-p06.glb — 114个场景节点、80个网格、11个颜色渐层网格。参阅 tools/build_cat_glb_p06.py 与 tools/add_vertex_coat.py；仍为刚性分层关节GLB（无skins）。
