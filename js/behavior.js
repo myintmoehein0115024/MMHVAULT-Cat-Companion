@@ -18,6 +18,7 @@ export class CatMind{
     this.faceTarget=0;
     this.targetX=0;this.targetZ=0;
     this.time=0;this.energy=.65;
+    this.travelLimit=1.15;
     this.gazeX=0;this.gazeY=0;
     this.gazeUntil=0;
     this.blink=.0;this.nextBlink=2.3;
@@ -46,9 +47,10 @@ export class CatMind{
   rest(){this.select('loaf',7,'猫咪开始休息');this.lookAtUser=false;}
   walk(){
     const direction=Math.random()>.5?1:-1;
-    this.targetX=clamp(this.x+direction*(.65+Math.random()*.75),-1.15,1.15);
+    const maxX=this.travelLimit;
+    this.targetX=clamp(this.x+direction*(.42+Math.random()*.72),-maxX,maxX);
     this.targetZ=clamp(this.z+(.5-Math.random())*.55,-.35,.30);
-    if(Math.abs(this.targetX-this.x)<.2)this.targetX=clamp(this.x-direction*.75,-1.15,1.15);
+    if(Math.abs(this.targetX-this.x)<.2)this.targetX=clamp(this.x-direction*.55,-maxX,maxX);
     this.select('walk',8,'猫咪自己走了几步');
     this.lookAtUser=false;
   }

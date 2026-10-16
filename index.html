@@ -12,23 +12,23 @@
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 0.1 · 与财务系统隔离</span>
+      <span class="release">Prototype 0.2 · 独立3D行为测试</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
           <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>这一版先验证真正的实时3D转身、走动、趴下和自然回应。电影级黑金幼猫将在后续使用独立角色资产替换。</p></div>
-          <span class="tag" id="health"><span class="status-dot"></span> 引擎初始化中</span>
+          <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
           <canvas id="catCanvas" aria-label="可互动的实时3D黑金猫动作原型">浏览器需要支持 Canvas 和 WebGL2。</canvas>
           <div class="stage-shine"></div>
           <div class="corner-meta"><span>实时3D · 自主行为</span><span id="fps">— FPS</span></div>
-          <div class="stage-caption"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
+          <div class="stage-caption" role="status"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
           <div class="stage-error" id="error" hidden></div>
         </div>
         <div class="stage-toolbar">
-          <div class="toolcopy"><strong>自动陪伴模式</strong><small>不需要手动选择正面或侧面：猫咪自主转身，移动和观察</small></div>
+          <div class="toolcopy"><strong>自动陪伴模式</strong><small>猫咪会自己转身、走动、休息，无需手动切换视角</small></div>
           <div class="switch-row"><label class="toggle"><input type="checkbox" id="autoToggle" checked><span></span></label><span>自主行为</span></div>
         </div>
       </div>
@@ -37,7 +37,7 @@
           <span class="eyebrow">BEHAVIOR TEST</span>
           <h2>试试和猫咪互动</h2>
           <p class="hint">可以点击3D场景中的猫咪，也可以用下方按钮测试动作。</p>
-          <div class="actions">
+          <div class="actions" aria-label="猫咪互动动作">
             <button type="button" id="greetBtn"><span>✧</span> 打招呼</button>
             <button type="button" id="walkBtn"><span>➜</span> 走动</button>
             <button type="button" id="restBtn"><span>☾</span> 趴下休息</button>

@@ -51,7 +51,18 @@ export class CatRenderer{
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
  upload(mesh){const g=this.gl,vao=g.createVertexArray();g.bindVertexArray(vao);const buffer=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,buffer);const interleaved=[];for(let i=0;i<mesh.pos.length;i+=3)interleaved.push(...mesh.pos.slice(i,i+3),...mesh.normal.slice(i,i+3));g.bufferData(g.ARRAY_BUFFER,new Float32Array(interleaved),g.STATIC_DRAW);g.enableVertexAttribArray(0);g.vertexAttribPointer(0,3,g.FLOAT,false,24,0);g.enableVertexAttribArray(1);g.vertexAttribPointer(1,3,g.FLOAT,false,24,12);const ib=g.createBuffer();g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,new Uint16Array(mesh.idx),g.STATIC_DRAW);g.bindVertexArray(null);return {vao,count:mesh.idx.length};}
- resize(){const rect=this.canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,1.8);const w=Math.max(2,Math.round(rect.width*dpr)),h=Math.max(2,Math.round(rect.height*dpr));if(this.size[0]!==w||this.size[1]!==h){this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);}}
+ resize(){
+  const rect=this.canvas.getBoundingClientRect();
+  const cssW=Math.max(2,rect.width), cssH=Math.max(2,rect.height);
+  // Cap GPU backbuffer by both device pixel ratio and total pixels. Prevents
+  // multi-megapixel allocations on high-DPR iPhones, iPads and Androids.
+  const dprCap=(cssW<670?1.5:1.8);
+  const dpr=Math.min(devicePixelRatio||1,dprCap,Math.sqrt(2000000/(cssW*cssH)));
+  const w=Math.max(2,Math.round(cssW*dpr)),h=Math.max(2,Math.round(cssH*dpr));
+  if(this.size[0]!==w||this.size[1]!==h){
+   this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);
+  }
+ }
  draw(mesh,model,color,metal=0,glow=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
  ball(parent,point,size,color,metal=0,extra=[]){this.draw('sphere',mat(parent,T(...point),...extra,S(...size)),color,metal);}
  ear(parent,side,time){const pitch=.045*Math.sin(time*1.8+side),p=mat(parent,T(side*.34,.39,-.12),RZ(-side*.08),RX(pitch));this.draw('ear',p,'#0c1017');this.draw('ear',mat(p,T(0,.06,.076),S(.62,.72,.36)),'#995b43',0,.02);}
@@ -128,7 +139,12 @@ export class CatRenderer{
   }
  }
  render(mind,time){if(this.lost)return;this.resize();const g=this.gl;const ratio=this.size[0]/Math.max(1,this.size[1]);g.clear(g.COLOR_BUFFER_BIT|g.DEPTH_BUFFER_BIT);g.useProgram(this.shader);g.uniformMatrix4fv(this.loc.uProj,false,perspective(.72,ratio,.1,50));
-  const phone=ratio<.9;g.uniformMatrix4fv(this.loc.uView,false,lookAt([0,phone?2.3:2.0,phone?6.8:5.8],[0,.89,0]));this.drawCat(mind,time);
+  const portrait=ratio<.9;
+  // Mobile camera gets closer for legible face/eyes; walking range is limited
+  // separately by CatMind so the full kitten stays visible.
+  const cameraZ=portrait?Math.max(5.55,4.0/Math.max(.7,ratio)):5.8;
+  g.uniformMatrix4fv(this.loc.uView,false,lookAt([0,portrait?2.18:2.0,cameraZ],[0,.88,0]));
+  this.drawCat(mind,time);
  }
  dispose(){const g=this.gl;if(!g)return;for(const m of Object.values(this.meshes))g.deleteVertexArray(m.vao);g.deleteProgram(this.shader);}
 }
