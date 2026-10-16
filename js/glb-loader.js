@@ -1,7 +1,7 @@
-/* Self-hosted GLB 2.0 geometry loader for the P0.6 articulated + vertex-color prototype.
-   Supports embedded buffer, triangle primitives, node hierarchy, baseColorFactor, metallic-roughness factors and uncompressed COLOR_0 vertex colors.
-   Explicitly does NOT yet support skinned meshes, animation clips, texture maps,
-   Draco/KTX2 or full PBR. Future studio assets need a full glTF pipeline. */
+/* P0.7 self-hosted GLB geometry + small weighted-skin loader.
+   Supports one embedded GLB buffer, up to 8 joints per skin (renderer max),
+   JOINTS_0/WEIGHTS_0 and inverse bind matrices; no clips, textures, Draco/KTX2.
+   Not a complete glTF implementation or a studio grooming solution. */
 const COMPONENT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
 const ELEMENTS={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
 function readAccessor(json,bytes,index){
@@ -41,15 +41,19 @@ export async function loadCatGLB(url,{signal}={}){
  if(!json||!binary||json.asset?.version!=='2.0')throw Error('GLB 缺少模型数据');
  if((json.buffers||[]).length!==1)throw Error('当前测试加载器仅支持一个 GLB buffer');
  if(json.extensionsRequired?.length)throw Error('当前测试加载器尚不支持此模型需要的 glTF 扩展');
- if(json.skins?.length||json.animations?.length)throw Error('此原型尚不支持 glTF 蒙皮与动画片段，需专业动画加载器');
+ if(json.animations?.length)throw Error('当前蒙皮原型尚未支持 glTF 内嵌动画剪辑');
  const meshes=(json.meshes||[]).map((m,index)=>{
   return (m.primitives||[]).map(prim=>{
    if(prim.mode!==undefined&&prim.mode!==4)throw Error('只能绘制三角形网格');
    const positions=readAccessor(json,binary,prim.attributes.POSITION);
    const colors=prim.attributes.COLOR_0===undefined?null:readAccessor(json,binary,prim.attributes.COLOR_0);
+   const jointIds=prim.attributes.JOINTS_0===undefined?null:readAccessor(json,binary,prim.attributes.JOINTS_0);
+   const jointWeights=prim.attributes.WEIGHTS_0===undefined?null:readAccessor(json,binary,prim.attributes.WEIGHTS_0);
    let normals=prim.attributes.NORMAL===undefined?null:readAccessor(json,binary,prim.attributes.NORMAL);
    const indices=prim.indices===undefined?Array.from({length:positions.length/3},(_,i)=>i):readAccessor(json,binary,prim.indices);
    if(positions.length%3||normals&&normals.length!==positions.length ||colors&&colors.length!==positions.length ||indices.length%3)throw Error('模型网格属性不完整');
+   if(!!jointIds!==!!jointWeights)throw Error('JOINTS_0 和 WEIGHTS_0 必须成对出现');
+   if(jointIds&&(jointIds.length!==positions.length/3*4||jointWeights.length!==jointIds.length))throw Error('蒙皮权重数量不正确');
    if(positions.length/3>65535)throw Error('当前测试加载器单网格顶点数量不能超过65535');
    for(const idx of indices)if(idx<0||idx>=positions.length/3)throw Error('模型网格索引越界');
    if(!normals){
@@ -66,10 +70,20 @@ export async function loadCatGLB(url,{signal}={}){
    }
    const mtl=json.materials?.[prim.material||0]||{};
    const pbr=mtl.pbrMetallicRoughness||{};
-   return {name:m.name||`Mesh${index}`,positions,normals,colors,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,doubleSided:!!mtl.doubleSided};
+   return {name:m.name||`Mesh${index}`,positions,normals,colors,jointIds,jointWeights,indices,baseColor:pbr.baseColorFactor||[.5,.5,.5,1],metallic:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,doubleSided:!!mtl.doubleSided};
   });
  });
- const nodes=(json.nodes||[]).map(n=>({name:n.name||'',mesh:n.mesh,children:n.children||[],matrix:n.matrix||null,translation:n.translation||[0,0,0],rotation:n.rotation||[0,0,0,1],scale:n.scale||[1,1,1]}));
+ const nodes=(json.nodes||[]).map(n=>({name:n.name||'',mesh:n.mesh,skin:n.skin,children:n.children||[],matrix:n.matrix||null,translation:n.translation||[0,0,0],rotation:n.rotation||[0,0,0,1],scale:n.scale||[1,1,1]}));
+ const skins=(json.skins||[]).map((sk,i)=>{
+   if(!sk.joints?.length||sk.joints.length>8||sk.inverseBindMatrices===undefined)throw Error('蒙皮关节数超过8或缺少 inverseBindMatrices: '+i);
+   const inverseBindMatrices=readAccessor(json,binary,sk.inverseBindMatrices);
+   if(inverseBindMatrices.length!==sk.joints.length*16)throw Error('反向绑定矩阵数量错误');
+   for(const joint of sk.joints)if(!nodes[joint])throw Error('蒙皮骨骼节点索引无效');
+   return {joints:sk.joints,inverseBindMatrices};
+ });
+ for(const n of nodes)if(n.skin!==undefined&&!skins[n.skin])throw Error('未找到绑定的 glTF skin');
+ for(const m of meshes)for(const p of m)if(p.jointIds){for(const k of p.jointIds)if(k>=8)throw Error('当前蒙皮加载器只支持0至7号骨骼索引');}
+
  const roots=json.scenes?.[json.scene||0]?.nodes || [0];
- return {meshes,nodes,roots,bytes:buffer.byteLength,materialCount:(json.materials||[]).length};
+ return {meshes,nodes,skins,roots,bytes:buffer.byteLength,materialCount:(json.materials||[]).length};
 }

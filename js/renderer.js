@@ -1,6 +1,6 @@
-/* Black Gold Cat P0.6 — shared standalone WebGL2 core with roughness-aware shading.
+/* Black Gold Cat P0.7 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
-   NOT the final cinematic / professionally skinned GLB. No external CDNs. */
+   Lightweight weighted-skin test (tail only), NOT a final cinematic or full character armature. No external CDNs. */
 const PI=Math.PI;
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const multiply=(a,b)=>{const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;};
@@ -101,9 +101,26 @@ precision highp float;
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNormal;
 layout(location=2) in vec3 aVertexColor;
+layout(location=3) in vec4 aJointIds;
+layout(location=4) in vec4 aJointWeights;
 uniform mat4 uProj,uView,uModel;
+uniform mat4 uJointPalette[8];
+uniform float uUseSkin;
 out vec3 vN,vW,vVertexColor;
-void main(){ vec4 p=uModel*vec4(aPos,1.0); vW=p.xyz; vN=mat3(transpose(inverse(uModel)))*aNormal; vVertexColor=aVertexColor; gl_Position=uProj*uView*p; }`;
+void main(){
+ mat4 skin=mat4(1.0);
+ if(uUseSkin>.5){
+   skin=uJointPalette[int(aJointIds.x)]*aJointWeights.x
+       +uJointPalette[int(aJointIds.y)]*aJointWeights.y
+       +uJointPalette[int(aJointIds.z)]*aJointWeights.z
+       +uJointPalette[int(aJointIds.w)]*aJointWeights.w;
+ }
+ vec4 p=uModel*skin*vec4(aPos,1.0);
+ vW=p.xyz;
+ vN=mat3(transpose(inverse(uModel)))*mat3(skin)*aNormal;
+ vVertexColor=aVertexColor;
+ gl_Position=uProj*uView*p;
+}`;
 const FRAG=`#version 300 es
 precision highp float;
 in vec3 vN,vW,vVertexColor;
@@ -137,11 +154,33 @@ function shader(gl,source,type){const sh=gl.createShader(type);gl.shaderSource(s
 function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT,gl.VERTEX_SHADER));gl.attachShader(p,shader(gl,FRAG,gl.FRAGMENT_SHADER));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
 export class CatRenderer{
  constructor(canvas,options={}){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
-  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
-  this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
+  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
+  this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.018,.064,.11,1);this.lost=false;
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
- upload(mesh){const g=this.gl,vao=g.createVertexArray();g.bindVertexArray(vao);const buffer=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,buffer);const interleaved=[];for(let i=0;i<mesh.pos.length;i+=3)interleaved.push(...mesh.pos.slice(i,i+3),...mesh.normal.slice(i,i+3),...(mesh.colors?mesh.colors.slice(i,i+3):[1,1,1]));g.bufferData(g.ARRAY_BUFFER,new Float32Array(interleaved),g.STATIC_DRAW);g.enableVertexAttribArray(0);g.vertexAttribPointer(0,3,g.FLOAT,false,36,0);g.enableVertexAttribArray(1);g.vertexAttribPointer(1,3,g.FLOAT,false,36,12);g.enableVertexAttribArray(2);g.vertexAttribPointer(2,3,g.FLOAT,false,36,24);const ib=g.createBuffer();g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,new Uint16Array(mesh.idx),g.STATIC_DRAW);g.bindVertexArray(null);return {vao,vertexBuffer:buffer,indexBuffer:ib,count:mesh.idx.length};}
+ upload(mesh){
+  const g=this.gl,vao=g.createVertexArray();g.bindVertexArray(vao);
+  const buffer=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,buffer);
+  const interleaved=[];
+  for(let i=0;i<mesh.pos.length;i+=3){
+   const v=i/3;
+   const weights=mesh.jointWeights?Array.from(mesh.jointWeights.slice(v*4,v*4+4)):[1,0,0,0];
+   let sum=weights.reduce((a,b)=>a+Math.max(0,b),0);
+   if(!sum||!Number.isFinite(sum))sum=1;
+   interleaved.push(...mesh.pos.slice(i,i+3),...mesh.normal.slice(i,i+3),
+    ...(mesh.colors?mesh.colors.slice(i,i+3):[1,1,1]),
+    ...(mesh.jointIds?mesh.jointIds.slice(v*4,v*4+4):[0,0,0,0]),
+    ...weights.map(w=>Math.max(0,w)/sum));
+  }
+  g.bufferData(g.ARRAY_BUFFER,new Float32Array(interleaved),g.STATIC_DRAW);
+  for(const [index,bytes] of [[0,0],[1,12],[2,24],[3,36],[4,52]]){
+   g.enableVertexAttribArray(index);g.vertexAttribPointer(index,index===3||index===4?4:3,g.FLOAT,false,68,bytes);
+  }
+  const ib=g.createBuffer();g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);
+  g.bufferData(g.ELEMENT_ARRAY_BUFFER,new Uint16Array(mesh.idx),g.STATIC_DRAW);
+  g.bindVertexArray(null);
+  return {vao,vertexBuffer:buffer,indexBuffer:ib,count:mesh.idx.length};
+ }
  resize(){
   const rect=this.canvas.getBoundingClientRect();
   const cssW=Math.max(2,rect.width), cssH=Math.max(2,rect.height);

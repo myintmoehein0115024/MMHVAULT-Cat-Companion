@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07121d">
   <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
-  <title>Black Gold Cat P0.6 — 自然步态与表情实验室</title>
-  <link rel="stylesheet" href="./css/style.css?v=p06">
+  <title>Black Gold Cat P0.7 — GPU蒙皮与动作实验室</title>
+  <link rel="stylesheet" href="./css/style.css?v=p07">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 0.6 · 自然步态与表情升级</span>
+      <span class="release">Prototype 0.7 · 首个GPU蒙皮骨骼</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
-          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>本版新增实验性双段落脚求解、脸颊与嘴部表情、上下眼睑和黑金毛色渐层。仍是实时3D原型；完整蒙皮、真实毛发及电影级角色资产尚待专业制作。</p></div>
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P0.7 为尾巴加入真正的GPU权重蒙皮及连续形变，保留四足IK试验与面部表情，并优化伸展动作。全身蒙皮、影视级毛发和完整专业动画片段尚待制作。</p></div>
           <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
@@ -48,18 +48,18 @@
         <div class="panel design-panel">
           <span class="eyebrow">FINAL ART TARGET</span><h2>唯一的黑金幼猫</h2>
           <img src="./assets/black-gold-cat-reference.webp" alt="最终黑金幼猫外观参考图：精致、可爱、黑金色，电影动画风" loading="lazy">
-          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P0.6 已加载带分层关节和颜色渐层的独立 <code>.glb</code> 试验模型；专业影视级毛发与骨骼动画尚未完成。</p>
+          <p>上面是<strong>目标美术参考</strong>，不是实时3D截图。P0.7 已加载包含首个尾巴蒙皮网格和分层四足关节的独立 <code>.glb</code> 试验模型；专业影视级毛发与骨骼动画尚未完成。</p>
         </div>
         <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
-          <div class="milestone"><span class="done">✓</span><div><strong>独立网站、GLB关节与材质实验</strong><small>独立GLB、步态IK原型、面部表情控制、黑金渐层材质与加载回退</small></div></div>
-          <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>制作正式角色：专业拓扑、UV与PBR纹理、蒙皮骨骼和表情</small></div></div>
-          <div class="milestone"><span class="pending">3</span><div><strong>动画与场景自主行为</strong><small>正式地面锁脚、专业动画片段混合、转身、睡眠、唤醒</small></div></div>
+          <div class="milestone"><span class="done">✓</span><div><strong>独立网站、GLB关节与材质实验</strong><small>独立GLB、三关节尾巴GPU蒙皮、步态IK原型、面部表情与加载回退</small></div></div>
+          <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>完成全身蒙皮：专业拓扑、UV与PBR纹理、全身蒙皮骨骼和表情</small></div></div>
+          <div class="milestone"><span class="pending">3</span><div><strong>动画与场景自主行为</strong><small>正式地面锁脚、动画片段交叉混合、转身、睡眠、唤醒</small></div></div>
           <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
         </div>
       </aside>
     </section>
     <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
   </main>
-  <script type="module" src="./js/app.js?v=p06"></script>
+  <script type="module" src="./js/app.js?v=p07"></script>
 </body>
 </html>

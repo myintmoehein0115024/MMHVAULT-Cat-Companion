@@ -1,8 +1,8 @@
-/* Black Gold Cat P0.6 — modular GLB player with experimental planar two-bone IK,
-   expressive face pivots, per-vertex coat colors and roughness.
-   This is node animation, NOT weighted-skin studio-quality facial/limb rigging. */
-import {CatRenderer} from './renderer.js?v=p06';
-import {loadCatGLB} from './glb-loader.js?v=p06';
+/* Black Gold Cat P0.7 — first real GPU-skinned tail experiment + articulated limbs.
+   Weighted glTF skin/inverse bind supported for tail; remaining limbs still use
+   independent node pivots. Neither full-body studio armature nor film groom. */
+import {CatRenderer} from './renderer.js?v=p07';
+import {loadCatGLB} from './glb-loader.js?v=p07';
 
 const I=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const mul=(a,b)=>{const out=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)out[c*4+r]+=a[k*4+r]*b[c*4+k];return out;};
@@ -49,17 +49,18 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.6 表情与毛色 GLB';}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P0.7 蒙皮骨骼试验 GLB';}
  async load(url){
   const model=await loadCatGLB(url);
   const meshes=model.meshes.map(prims=>prims.map(p=>{
-   const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null});
+   const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
+    jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
    const name='glb'+this.entries.length;this.meshes[name]=mesh;this.entries.push(name);
    const metal=clamp(p.metallic??0,0,1),rough=clamp(p.roughness??1,.065,1);
-   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0};
+   return {key:name,color:cssColor(p.baseColor),metal,rough,fur:metal<.1&&rough>.76?.55:0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds};
   }));
-  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,roots:model.roots};
-  this.assetName='P0.6 GLB表情猫 · '+Math.round(model.bytes/1024)+' KB · '+model.nodes.length+'节点';
+  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,roots:model.roots};
+  this.assetName='P0.7 GLB蒙皮试验猫 · '+Math.round(model.bytes/1024)+' KB · '+model.skins.length+'组蒙皮';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -90,7 +91,7 @@ export class GLBCatRenderer extends CatRenderer{
   const poseFor=node=>{
    const name=node.name;
    if(name==='CatRoot')return combine(node.base,T(mind.x,-.035+breath+bodyBob,mind.z),RY(mind.yaw),S(1,1-.105*loaf,1));
-   if(name==='HeadPivot')return combine(node.base,RY(.06*Math.sin(time*.47)+mind.gazeX*.105),RX(-mind.gazeY*.065+.022*Math.sin(time*.55)),RZ(.020*Math.sin(time*.6)));
+   if(name==='HeadPivot')return combine(node.base,RY(.06*Math.sin(time*.47)+mind.gazeX*.105),RX(-mind.gazeY*.065+.022*Math.sin(time*.55)-(mind.mode==='stretch'?Math.sin(Math.PI*clamp(age/2.8,0,1))*.11:0)),RZ(.020*Math.sin(time*.6)));
    if(name==='EarLeft'||name==='EarRight')return combine(node.base,RZ((name==='EarLeft'?-1:1)*(Math.sin(time*1.6)*.026+(curious?.030:0))));
    if(name.startsWith('CheekPivot'))return combine(node.base,T(0,smile*.009,.007*smile),S(1+smile*.025,1+smile*.032,1));
    if(name==='MouthPivot')return combine(node.base,T(0,smile*.019,smile*.006),S(1+smile*.18,1,1));
@@ -103,25 +104,53 @@ export class GLBCatRenderer extends CatRenderer{
    if(name.startsWith('Leg')||name.startsWith('Knee')||name.startsWith('Paw')){
     const front=name.includes('Front'),left=name.includes('Left');
     const angles=legCache.get((front?'Front':'Back')+(left?'Left':'Right'));
-    if(name.startsWith('Leg'))return combine(node.base,RX(angles.hip),RZ(angles.greeting*.14));
+    if(name.startsWith('Leg'))return combine(node.base,RX(angles.hip+(front&&mind.mode==='stretch'?-.12*Math.sin(Math.PI*clamp(age/2.8,0,1)):0)),RZ(angles.greeting*.14));
     if(name.startsWith('Knee'))return combine(node.base,RX(angles.knee));
     return combine(node.base,RX(angles.paw));
    }
-   if(name==='TailRoot')return combine(node.base,RY(mind.tail*.46),RZ(Math.sin(time*1.3)*.075));
-   if(name==='TailMid')return combine(node.base,RY(-mind.tail*.62),RX(Math.sin(time*1.5+.7)*.15));
-   if(name==='TailTip')return combine(node.base,RY(mind.tail*.83),RX(Math.sin(time*1.7+1.2)*.18));
+   if(name==='TailRoot')return combine(node.base,RY(mind.tail*.38),RZ(Math.sin(time*1.3)*.065));
+   if(name==='TailMid')return combine(node.base,RY(-mind.tail*.52),RX(Math.sin(time*1.5+.7)*.11));
+   if(name==='TailTip')return combine(node.base,RY(mind.tail*.78),RX(Math.sin(time*1.7+1.2)*.15));
    return node.base;
   };
+  // First evaluate the complete hierarchy, then compute current skin matrices.
+  // The skinned tail mesh is authored in cat bind coordinates, so jointWorld * IBMs
+  // maps original mesh vertices into animated world space without double transforms.
+  const drawList=[],worlds=new Array(this.model.nodes.length);
   const traverse=(id,parent)=>{
    const node=this.model.nodes[id];if(!node)return;
-   const world=mul(parent,poseFor(node));
-   if(node.mesh!==undefined){for(const p of this.model.meshes[node.mesh]){
-    if(p.doubleSided)g.disable(g.CULL_FACE);
-    this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
-    if(p.doubleSided)g.enable(g.CULL_FACE);
-   }}
+   const world=mul(parent,poseFor(node));worlds[id]=world;
+   if(node.mesh!==undefined)drawList.push({node,world});
    for(const child of node.children)traverse(child,world);
   };
   for(const root of this.model.roots)traverse(root,I());
+  const skinPalettes=this.model.skins.map(sk=>{
+   const matrices=new Float32Array(sk.joints.length*16);
+   for(let i=0;i<sk.joints.length;i++){
+     if(!worlds[sk.joints[i]])throw Error('未更新的蒙皮骨骼节点');
+     const inverse=sk.inverseBindMatrices.subarray(i*16,(i+1)*16);
+     matrices.set(mul(worlds[sk.joints[i]],inverse),i*16);
+   }
+   return matrices;
+  });
+  for(const {node,world} of drawList){
+    // Replace the four old rigid tail pieces by a smoothly weighted tube.
+    if(this.model.skins.length&&['TailBase','TailMidFur','TailTipFur','TailHair'].includes(node.name))continue;
+    for(const p of this.model.meshes[node.mesh]){
+      if(p.doubleSided)g.disable(g.CULL_FACE);
+      if(p.skinned){
+       if(node.skin===undefined||!skinPalettes[node.skin])throw Error('蒙皮网格未引用有效 skin');
+       g.uniform1f(this.loc.uUseSkin,1);
+       g.uniformMatrix4fv(this.loc['uJointPalette[0]'],false,skinPalettes[node.skin]);
+       // In this standalone demo, skin palette already contains CatRoot motion.
+       this.draw(p.key,I(),p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
+      }else{
+       g.uniform1f(this.loc.uUseSkin,0);
+       this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend);
+      }
+      if(p.doubleSided)g.enable(g.CULL_FACE);
+    }
+  }
+  g.uniform1f(this.loc.uUseSkin,0);
  }
 }
