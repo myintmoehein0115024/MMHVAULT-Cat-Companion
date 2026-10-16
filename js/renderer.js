@@ -1,4 +1,4 @@
-/* P1.5: soft matte black velvet coat. Suppress bronze zebra waves; warm rim only at silhouette. */
+/* P1.6: preserve soft dark velvet shader; new fine weighted fur geometry is supplied by GLB. */
 /* Black Gold Cat P1.3 — shared standalone WebGL2 core with weighted skin support and roughness-aware shading.
    More expressive, higher tessellation procedural 3D than P0.2.
    Prototype 2-skin quadruped: contiguous body and four legs plus tail. Still no professional groom or glTF animation clips. No CDNs. */

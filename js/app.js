@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
-import {CatRenderer} from './renderer.js?v=p15';
-import {GLBCatRenderer} from './glb-renderer.js?v=p15';
+import {CatRenderer} from './renderer.js?v=p16';
+import {GLBCatRenderer} from './glb-renderer.js?v=p16';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p15.glb?v=p15');
+    await newRenderer.load('./models/black-gold-cat-p16.glb?v=p16');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P1.5 按实测反馈重做立体凹面猫耳、内耳渐层，压低身体棕色波纹，保持两套GPU蒙皮和六段动画；仍是实时3D原型。';
+    assetStatus.title='P1.6 改善脸部比例、保留立体耳廓，增加与全身两套GPU蒙皮同步的细绒毛；六段动画保留，仍是实时3D原型。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}
