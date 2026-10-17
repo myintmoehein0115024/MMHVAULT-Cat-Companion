@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
 import {CatRenderer} from './renderer.js?v=p22';
-import {GLBCatRenderer} from './glb-renderer.js?v=p22';
+import {GLBCatRenderer} from './glb-renderer.js?v=p23';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -62,7 +62,7 @@ async function start(){
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P2.2 不更换原GLB模型：运行时以原有蒙皮表面生成薄绒毛层和按毛流梳理的短毛片；旧P2.0针刺层已停用。保留耳朵、脸型、骨骼和六段动画；不是专业离线梳毛资产。';
+    assetStatus.title='P2.3 不更换原 GLB：保留 P2.2 全身蒙皮绒毛，在既有头脸/耳外缘/颈胸节点上追加分区短绒；不遮挡眼睛与粉色内耳。保留原骨骼、动画和自主行为；需通过真实设备视觉验收。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

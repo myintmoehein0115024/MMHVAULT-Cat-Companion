@@ -1,7 +1,8 @@
-/* Black Gold Cat P2.1 — surface-combed short-fur ribbons replacing radial needle spikes, and preserved P1.8 ear/face fixes; native glTF animation clips blended over GPU-skinned body and tail.
+/* Black Gold Cat P2.3 — P2.2 skin-following body/tail short fur plus rigid head/ear/cheek/neck micro-groom; P2.1 original GLB, ear/face and clips intact.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
 import {CatRenderer} from './renderer.js?v=p22';
 import {buildGroom} from './fur-groom.js?v=p22';
+import {buildRigidFaceGroom,P23_RIGID_GROOM_TARGETS} from './face-fur.js?v=p23';
 import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
 import {loadCatGLB} from './glb-loader.js?v=p11';
 import {sampleAnimationLayers} from './clip-player.js?v=p11';
@@ -52,7 +53,7 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.2 蒙皮短绒毛流 + 双层柔绒壳';this.footPlant=new FootPlantCoordinator();}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.3 头脸耳缘短绒 + P2.2 全身蒙皮绒毛';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
@@ -72,6 +73,22 @@ export class GLBCatRenderer extends CatRenderer{
    });
   }
   if(Object.keys(groomNodes).length!==2)throw Error('P2.2 贴身绒毛缺少身体或尾巴的绑定网格');
+  // Rigid face fur uses the SAME node local transform as its target surface.
+  // It does not borrow body skin matrices (which would make the head lag behind).
+  const rigidGroomNodes={};
+  for(const node of model.nodes){
+   if(node.mesh===undefined || !P23_RIGID_GROOM_TARGETS.includes(node.name))continue;
+   if(node.skin!==undefined)throw Error('P2.3 检测到意外蒙皮脸部节点: '+node.name);
+   const source=model.meshes[node.mesh]?.[0];
+   if(!source)throw Error('P2.3 脸部网格缺失: '+node.name);
+   rigidGroomNodes[node.name]=buildRigidFaceGroom(source,node.name).map((layer,j)=>{
+    const key='p23face'+node.name+j;
+    this.meshes[key]=this.upload(layer.mesh);this.entries.push(key);
+    return {key,detail:layer.detail};
+   });
+  }
+  if(Object.keys(rigidGroomNodes).length!==P23_RIGID_GROOM_TARGETS.length)
+   throw Error('P2.3 脸部/耳缘/颈胸毛发原始网格不完整');
   const meshes=model.meshes.map(prims=>prims.map((p,primitiveIndex)=>{
    // Do not upload known obsolete spiked tuft geometry to the GPU.
    if(/^P20(?:Coat|Tail)(?:Core|Detail)Fiber$/.test(p.name)||
@@ -84,8 +101,8 @@ export class GLBCatRenderer extends CatRenderer{
    const furry=/^(Body|Head|Cheek|Chest|Leg|UpperLeg|LowerLeg|Paw|Tail|Skinned|P08|P16|P20|Temple|EarRim|Brow|BlackFur)/.test(p.name) && !/Eye|Iris|Ring|Collar|Gold|Medallion|Whisker|Toe|Inner|Mouth|Nose/.test(p.name);
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:furry ? .94 : 0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds,eyeAccent:/EyeIris|EyeRing/.test(p.name)?1:0};
   }));
-  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots,groomNodes};
-  this.assetName='P2.2 · 双层贴身绒毛 / 真实蒙皮短毛片 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
+  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots,groomNodes,rigidGroomNodes};
+  this.assetName='P2.3 · 脸颊耳缘颈胸短绒 + P2.2 身体蒙皮毛流 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -205,6 +222,17 @@ export class GLBCatRenderer extends CatRenderer{
        this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend,p.eyeAccent);
       }
       if(p.doubleSided)g.enable(g.CULL_FACE);
+    }
+    // Keep the micro-fur attached to its animated rigid head/cheek/ear/neck node.
+    const faceLayers=this.model.rigidGroomNodes[node.name];
+    if(faceLayers){
+      g.uniform1f(this.loc.uUseSkin,0);
+      g.disable(g.CULL_FACE);
+      for(const layer of faceLayers){
+        if(layer.detail && this.canvas.clientWidth<620)continue;
+        this.draw(layer.key,world,'#ffffff',0,0,.88,1,.98,1);
+      }
+      g.enable(g.CULL_FACE);
     }
     const layers=this.model.groomNodes[node.name];
     if(layers){
