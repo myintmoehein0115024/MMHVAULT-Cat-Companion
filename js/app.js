@@ -1,6 +1,6 @@
 import {CatMind} from './behavior.js?v=p11';
-import {CatRenderer} from './renderer.js?v=p18';
-import {GLBCatRenderer} from './glb-renderer.js?v=p21';
+import {CatRenderer} from './renderer.js?v=p22';
+import {GLBCatRenderer} from './glb-renderer.js?v=p22';
 
 const $=id=>document.getElementById(id);
 const canvas=$('catCanvas'), health=$('health'), error=$('error'), focusBtn=$('focusBtn'), assetStatus=$('assetStatus');
@@ -58,11 +58,11 @@ async function start(){
   let newRenderer=null;
   try{
     newRenderer=new GLBCatRenderer(canvas);
-    await newRenderer.load('./models/black-gold-cat-p21.glb?v=p21');
+    await newRenderer.load('./models/black-gold-cat-p21.glb?v=p22');
     if(!running){newRenderer.dispose();return;}
     renderer=newRenderer;
     assetStatus.textContent=renderer.assetName;
-    assetStatus.title='P2.1 继续保留 P1.8 的耳朵、脸型与头颈修复，修正身体和尾巴的黑刺毛束，改为顺着毛流贴近皮肤的柔和短绒；两组蒙皮及六段动画保持不变。仍是实时3D原型，不是电影级模型。';
+    assetStatus.title='P2.2 不更换原GLB模型：运行时以原有蒙皮表面生成薄绒毛层和按毛流梳理的短毛片；旧P2.0针刺层已停用。保留耳朵、脸型、骨骼和六段动画；不是专业离线梳毛资产。';
   }catch(assetError){
     // Make sure old resources are disposed before reusing the canvas context.
     try{newRenderer?.dispose();}catch(_e){}

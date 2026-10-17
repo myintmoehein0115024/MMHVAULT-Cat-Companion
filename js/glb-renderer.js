@@ -1,6 +1,7 @@
 /* Black Gold Cat P2.1 — surface-combed short-fur ribbons replacing radial needle spikes, and preserved P1.8 ear/face fixes; native glTF animation clips blended over GPU-skinned body and tail.
    Face details remain attached to rigid named pivots; this is NOT final studio topology, fur groom, or professionally animated motions. */
-import {CatRenderer} from './renderer.js?v=p18';
+import {CatRenderer} from './renderer.js?v=p22';
+import {buildGroom} from './fur-groom.js?v=p22';
 import {actionPulse,pawCycle,walkBlend} from './motion-mixer.js?v=p11';
 import {loadCatGLB} from './glb-loader.js?v=p11';
 import {sampleAnimationLayers} from './clip-player.js?v=p11';
@@ -51,12 +52,31 @@ export function solvePawIK(targetY,targetZ,front=true){
 }
 
 export class GLBCatRenderer extends CatRenderer{
- constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.1 毛流软化与全身绒毛修正版';this.footPlant=new FootPlantCoordinator();}
+ constructor(canvas){super(canvas,{minimal:true});this.model=null;this.entries=[];this.assetName='P2.2 蒙皮短绒毛流 + 双层柔绒壳';this.footPlant=new FootPlantCoordinator();}
  async load(url){
   const model=await loadCatGLB(url);
   if(['idle','walk','loaf','inspect','welcome','stretch'].some(name=>!model.animations.some(c=>c.name===name)))
    throw Error('P2.1 GLB 缺少必要的六段动画，请检查 models/black-gold-cat-p21.glb 是否上传完整');
-  const meshes=model.meshes.map(prims=>prims.map(p=>{
+  const groomNodes={};
+  // P2.2 reuses the unchanged P2.1 skinned meshes as sources. Generated fur
+  // inherits the EXACT skin index and the current animated joint palette.
+  for(const node of model.nodes){
+   if(node.mesh===undefined||node.skin===undefined)continue;
+   const source=model.meshes[node.mesh]?.[0];
+   if(!source)continue;
+   if(!['P08UnifiedSkinBodyAndFourLegs','SkinnedTail'].includes(source.name))continue;
+   groomNodes[node.name]=buildGroom(source,{tail:source.name==='SkinnedTail'}).map((layer,j)=>{
+    const key='groom'+node.name+j;
+    this.meshes[key]=this.upload(layer.mesh);this.entries.push(key);
+    return {key,detail:layer.detail,coatLayer:layer.coatLayer};
+   });
+  }
+  if(Object.keys(groomNodes).length!==2)throw Error('P2.2 贴身绒毛缺少身体或尾巴的绑定网格');
+  const meshes=model.meshes.map(prims=>prims.map((p,primitiveIndex)=>{
+   // Do not upload known obsolete spiked tuft geometry to the GPU.
+   if(/^P20(?:Coat|Tail)(?:Core|Detail)Fiber$/.test(p.name)||
+       ['P16SkinnedCoatVelvet','P16SkinnedTailVelvet'].includes(p.name)||
+       (p.name==='P08UnifiedSkinBodyAndFourLegs'&&primitiveIndex>0))return {skipped:true};
    const mesh=this.upload({pos:Array.from(p.positions),normal:p.normals?Array.from(p.normals):Array.from(p.positions,()=>0),idx:Array.from(p.indices),colors:p.colors?Array.from(p.colors):null,
     jointIds:p.jointIds?Array.from(p.jointIds):null,jointWeights:p.jointWeights?Array.from(p.jointWeights):null});
    const name='glb'+this.entries.length;this.meshes[name]=mesh;this.entries.push(name);
@@ -64,8 +84,8 @@ export class GLBCatRenderer extends CatRenderer{
    const furry=/^(Body|Head|Cheek|Chest|Leg|UpperLeg|LowerLeg|Paw|Tail|Skinned|P08|P16|P20|Temple|EarRim|Brow|BlackFur)/.test(p.name) && !/Eye|Iris|Ring|Collar|Gold|Medallion|Whisker|Toe|Inner|Mouth|Nose/.test(p.name);
    return {key:name,color:cssColor(p.baseColor),metal,rough,fur:furry ? .94 : 0,alpha:p.baseColor[3]??1,doubleSided:p.doubleSided,vertexBlend:p.colors?1:0,skinned:!!p.jointIds,eyeAccent:/EyeIris|EyeRing/.test(p.name)?1:0};
   }));
-  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots};
-  this.assetName='P2.1 · 贴身短绒毛/尾巴软绒 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
+  this.model={nodes:model.nodes.map(n=>({...n,base:nodeMatrix(n)})),meshes,skins:model.skins,animations:model.animations,roots:model.roots,groomNodes};
+  this.assetName='P2.2 · 双层贴身绒毛 / 真实蒙皮短毛片 · '+model.animations.length+'段动画 · '+Math.round(model.bytes/1024)+' KB';
   return this;
  }
  drawCat(mind,time){if(!this.model)return;
@@ -160,9 +180,10 @@ export class GLBCatRenderer extends CatRenderer{
    return matrices;
   });
   for(const {node,world} of drawList){
-    // On phones draw the fully weighted base fur; desktop receives detail fur.
-    // Preserve the complete GLB asset and animation hierarchy at every width.
-    if(this.canvas.clientWidth < 620 && /P20(?:Coat|Tail)DetailFiberNode/.test(node.name)) continue;
+    // The obsolete radial P20 fibers are retained in the immutable source GLB,
+    // but are no longer rendered: P2.2 supplies skin-following groomed geometry.
+    if(/P20(?:Coat|Tail)(?:Core|Detail)FiberNode/.test(node.name))continue;
+    if(['P16SkinnedCoatFuzzNode','P16SkinnedTailFuzzNode'].includes(node.name))continue;
     // Hide P0.7 rigid torso/leg shells, now replaced by one smoothly connected
     // skin-weighted body surface. Keep paw pads/toes and all face details.
     if(this.model.skins.length>=2 && (
@@ -171,6 +192,7 @@ export class GLBCatRenderer extends CatRenderer{
     // Replace the old rigid segmented tail shells with the weighted tube.
     if(this.model.skins.length&&['TailBase','TailMidFur','TailTipFur','TailHair'].includes(node.name))continue;
     for(const p of this.model.meshes[node.mesh]){
+      if(p.skipped)continue;
       if(p.doubleSided)g.disable(g.CULL_FACE);
       if(p.skinned){
        if(node.skin===undefined||!skinPalettes[node.skin])throw Error('蒙皮网格未引用有效 skin');
@@ -183,6 +205,18 @@ export class GLBCatRenderer extends CatRenderer{
        this.draw(p.key,world,p.color,p.metal,.01,p.fur,p.alpha,p.rough,p.vertexBlend,p.eyeAccent);
       }
       if(p.doubleSided)g.enable(g.CULL_FACE);
+    }
+    const layers=this.model.groomNodes[node.name];
+    if(layers){
+      // Render new fur under precisely the same bone palette as its base mesh.
+      g.uniform1f(this.loc.uUseSkin,1);
+      g.uniformMatrix4fv(this.loc['uJointPalette[0]'],false,skinPalettes[node.skin]);
+      g.disable(g.CULL_FACE);
+      for(const layer of layers){
+        if(layer.detail && this.canvas.clientWidth<620)continue;
+        this.draw(layer.key,I(),'#ffffff',0,0,.98,1,1,1,0,layer.coatLayer);
+      }
+      g.enable(g.CULL_FACE);
     }
   }
   g.uniform1f(this.loc.uUseSkin,0);

@@ -127,7 +127,7 @@ const FRAG=`#version 300 es
 precision highp float;
 in vec3 vN,vW,vVertexColor,vObj;
 uniform vec3 uColor;
-uniform float uMetal,uGlow,uFur,uAlpha,uRough,uVertexBlend,uEyeAccent;
+uniform float uMetal,uGlow,uFur,uAlpha,uRough,uVertexBlend,uEyeAccent,uCoatLayer;
 out vec4 frag;
 void main(){
  vec3 n=normalize(vN);
@@ -172,14 +172,29 @@ void main(){
    color+=irisMask*fiber*vec3(.21,.087,.012);
    color+=spec*.095*vec3(.93,.74,.40);
  }
+ // The thin shell is porous: screen-door coverage follows the normal angle.
+ // 4x4 ordered dither keeps the outline fuzzy without alpha-sorting artifacts.
+ if(uCoatLayer>0.5 && uCoatLayer<1.9){
+   vec3 eyeDir=normalize(vec3(0.0,.62,2.9)-vW);
+   float grazing=1.0-abs(dot(n,eyeDir));
+   float cover=clamp(.08+grazing*.48+(1.65-uCoatLayer)*.29,0.03,.75);
+   ivec2 pixel=ivec2(mod(floor(gl_FragCoord.xy),4.0));
+   int id=pixel.x+pixel.y*4;
+   float bayer=float((id==0)?0:(id==1)?8:(id==2)?2:(id==3)?10:
+                     (id==4)?12:(id==5)?4:(id==6)?14:(id==7)?6:
+                     (id==8)?3:(id==9)?11:(id==10)?1:(id==11)?9:
+                     (id==12)?15:(id==13)?7:(id==14)?13:5)/16.0;
+   if(bayer>=cover)discard;
+   color*=.88;
+ }
  frag=vec4(pow(max(color,vec3(.0)),vec3(.92)),uAlpha);
  }`;
 function shader(gl,source,type){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
 function program(gl){const p=gl.createProgram();gl.attachShader(p,shader(gl,VERT,gl.VERTEX_SHADER));gl.attachShader(p,shader(gl,FRAG,gl.FRAGMENT_SHADER));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
 export class CatRenderer{
  constructor(canvas,options={}){this.canvas=canvas;this.gl=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,powerPreference:'default'});if(!this.gl)throw Error('当前浏览器或设备未启用 WebGL2。建议使用新版 Safari / Chrome，并检查硬件加速。');
-  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]','uEyeAccent'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
-  this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.009,.030,.051,1);this.lost=false;
+  this.shader=program(this.gl);this.loc={};for(const n of ['uProj','uView','uModel','uColor','uMetal','uGlow','uFur','uAlpha','uRough','uVertexBlend','uUseSkin','uJointPalette[0]','uEyeAccent','uCoatLayer'])this.loc[n]=this.gl.getUniformLocation(this.shader,n);
+  this.gl.useProgram(this.shader);this.gl.uniform1f(this.loc.uUseSkin,0);this.gl.uniform1f(this.loc.uCoatLayer,0);this.meshes=options.minimal?{ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60))}:{sphere:this.upload(ellipsoid()),ear:this.upload(earShape()),ring:this.upload(circle()),shadow:this.upload(circle(.75,.70,60)), furHead:this.upload(furTufts(1100,194,'head')),furGold:this.upload(furTufts(280,731,'gold')),furBody:this.upload(furTufts(920,182,'all')),furChest:this.upload(furTufts(350,881,'chest')),furTail:this.upload(furTufts(390,271,'all')),whiskers:this.upload(whiskerMesh())};this.size=[0,0];this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA);this.gl.clearColor(.009,.030,.051,1);this.lost=false;
   this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});
  }
  upload(mesh){
@@ -217,7 +232,7 @@ export class CatRenderer{
    this.canvas.width=w;this.canvas.height=h;this.size=[w,h];this.gl.viewport(0,0,w,h);
   }
  }
- draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1,rough=.82,vertexBlend=0,eyeAccent=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.uniform1f(this.loc.uRough,rough);g.uniform1f(this.loc.uVertexBlend,vertexBlend);g.uniform1f(this.loc.uEyeAccent,eyeAccent);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
+ draw(mesh,model,color,metal=0,glow=0,fur=0,alpha=1,rough=.82,vertexBlend=0,eyeAccent=0,coatLayer=0){const g=this.gl,m=this.meshes[mesh];g.uniformMatrix4fv(this.loc.uModel,false,model);g.uniform3fv(this.loc.uColor,rgba(color));g.uniform1f(this.loc.uMetal,metal);g.uniform1f(this.loc.uGlow,glow);g.uniform1f(this.loc.uFur,fur);g.uniform1f(this.loc.uAlpha,alpha);g.uniform1f(this.loc.uRough,rough);g.uniform1f(this.loc.uVertexBlend,vertexBlend);g.uniform1f(this.loc.uEyeAccent,eyeAccent);g.uniform1f(this.loc.uCoatLayer,coatLayer);g.bindVertexArray(m.vao);g.drawElements(g.TRIANGLES,m.count,g.UNSIGNED_SHORT,0);}
  ball(parent,point,size,color,metal=0,extra=[]){this.draw('sphere',mat(parent,T(...point),...extra,S(...size)),color,metal);}
  ear(parent,side,time){const pitch=.045*Math.sin(time*1.8+side),p=mat(parent,T(side*.34,.39,-.12),RZ(-side*.08),RX(pitch));this.draw('ear',p,'#0c1017');this.draw('ear',mat(p,T(0,.06,.076),S(.62,.72,.36)),'#995b43',0,.02);}
  drawCat(mind,time){const g=this.gl;

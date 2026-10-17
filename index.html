@@ -5,23 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07121d">
   <meta name="description" content="Black Gold Cat | 独立3D猫咪行为实验室。与MMHVAULT主站完全分离。">
-  <title>Black Gold Cat P2.1 — 柔软短绒毛与毛流修复</title>
-  <link rel="stylesheet" href="./css/style.css?v=p21">
+  <title>Black Gold Cat P2.2 — 分层绒毛与蒙皮毛流</title>
+  <link rel="stylesheet" href="./css/style.css?v=p22">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>BLACK GOLD CAT</strong><small>MMHVAULT · 独立角色开发实验室</small></div></div>
-      <span class="release">Prototype 2.1 · 毛流软化修复</span>
+      <span class="release">Prototype 2.2 · 分层绒毛升级</span>
     </header>
     <section class="main-grid" aria-label="独立猫咪测试场景">
       <div class="stage-card">
         <div class="stage-top">
-          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>根据您实测的 P2.0 画面，P2.1 专门修正<strong>身体毛束像黑刺、尾巴像针刷、毛色偏棕</strong>的问题：将毛束改为更短、更贴皮肤、顺着毛流自然倾斜的细绒毛片，并统一蓝黑短绒色。保留既有耳朵、脸型、骨骼、自动行走、坐卧、六段 GLB 动画及全设备响应式。</p></div>
+          <div><span class="eyebrow">LIVE 3D LAB</span><h1>有灵性的陪伴，从这里开始。</h1><p>P2.2 在保留 P2.1 原始模型和动作的前提下，停止绘制旧的径向针刺毛束，改用<strong>双层蒙皮绒毛壳 + 贴身顺毛流短毛片</strong>。手机自动减少绒毛层级；保留猫脸、耳朵、四足动作与自主陪伴行为。</p></div>
           <div class="stage-tools"><span class="tag" id="health" role="status"><span class="status-dot"></span> 引擎初始化中</span><button id="focusBtn" class="focus-btn" type="button" aria-pressed="false" aria-label="切换专注观看模式">⛶ <span id="focusLabel">专注观看</span></button></div>
         </div>
         <div class="viewport-shell">
-          <canvas id="catCanvas" aria-label="实时3D黑金猫：P2.1 修正黑刺毛束、柔和的蓝黑短绒毛与尾巴毛流">浏览器需要支持 Canvas 和 WebGL2。</canvas>
+          <canvas id="catCanvas" aria-label="实时3D黑金猫：P2.2 双层绒毛与自动陪伴测试">浏览器需要支持 Canvas 和 WebGL2。</canvas>
           <div class="stage-shine"></div>
           <div class="corner-meta"><span id="assetStatus">载入独立 GLB 模型中…</span><span id="fps">— FPS</span></div>
           <div class="stage-caption" role="status"><span class="live-pulse"></span><span id="stateCaption">正在准备猫咪...</span></div>
@@ -49,18 +49,18 @@
         <div class="panel design-panel">
           <span class="eyebrow">APPROVED ART DIRECTION</span><h2>您选定的唯一黑金灵猫</h2>
           <img src="./assets/black-gold-cat-approved-p14.webp" alt="您确认的黑金猫设定图，包含正面、行走、坐姿、侧面与眼睛、鼻子、金色项圈、毛发、爪子细节" loading="lazy">
-          <p>这张就是<strong>您亲自确认的视觉标准</strong>，不再生成其他模板图。左边活动的猫是实时3D模型，本次重点修正了<strong>原本过长的刺状毛束、尾巴针刺轮廓及偏棕的身体毛色</strong>，并继续保留既有的耳朵、脸型与头颈修复。但目前<strong>仍不能与概念图达到完全一致的电影级毛发效果</strong>。完整专业模型、UV纹理及更自然的动作仍需继续制作。</p>
+          <p>这张就是<strong>您亲自确认的视觉标准</strong>，不再生成其他模板图。左边活动的猫是实时3D模型，本次将旧刺状毛束改为<strong>依附于骨骼的贴身短绒 + 薄绒毛层</strong>，不改变已确认的猫脸、头身与耳朵。它是可运行的实时毛发技术实验，<strong>尚未达到概念图中的专业毛发质量</strong>。完整专业模型、UV纹理及更自然的动作仍需继续制作。</p>
         </div>
         <div class="panel roadmap-panel"><span class="eyebrow">DEVELOPMENT STATUS</span><h2>项目进度</h2>
           <div class="milestone"><span class="done">✓</span><div><strong>独立网站、GLB关节与材质实验</strong><small>连续躯干／四足蒙皮、三关节尾巴GPU蒙皮、落脚IK原型与面部表情</small></div></div>
           <div class="milestone"><span class="pending">2</span><div><strong>电影级精细角色资产</strong><small>进一步制作专业拓扑、UV纹理、真实毛发贴图和精细角色动画</small></div></div>
-          <div class="milestone"><span class="done">✓</span><div><strong>GLB关键帧剪辑加载及混合基础</strong><small>六段内嵌 glTF 关键帧剪辑、坐姿与基础脚掌约束已保留；P2.1 保留耳朵、脸型与头颈修复，调整身体和尾巴的四组蒙皮毛束方向与长度，仍按屏幕宽度分级绘制；更专业绑定、真实毛发和严谨锁脚仍待继续开发</small></div></div>
+          <div class="milestone"><span class="done">✓</span><div><strong>GLB关键帧剪辑加载及混合基础</strong><small>六段内嵌 glTF 关键帧剪辑、坐姿与基础脚掌约束已保留；P2.2 保留 P2.1 骨骼、六段动画和行为系统，以原蒙皮实时生成短毛片及双层绒毛壳；移动端按画布宽度降低细节；专业毛发梳理、动画精修与真实设备性能仍待验证</small></div></div>
           <div class="milestone"><span class="pending">4</span><div><strong>MMHVAULT 集成适配</strong><small>安全隔离、悬浮边界和移动端性能测试</small></div></div>
         </div>
       </aside>
     </section>
     <footer>Black Gold Cat 试验项目 · 本站不请求登录、不读取财务数据、不连接 MMHVAULT 数据库</footer>
   </main>
-  <script type="module" src="./js/app.js?v=p21"></script>
+  <script type="module" src="./js/app.js?v=p22"></script>
 </body>
 </html>
