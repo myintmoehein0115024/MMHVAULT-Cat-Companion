@@ -28377,16 +28377,16 @@ html body.light #exchange .ex-mobile-select-v9,html body.light #exMobilePickerV9
 <script id="mmhvault-asia-v10-script">
 (()=>{'use strict';const root=document.getElementById('exAsiaV10');if(!root)return;
 const entries=[['USD','United States','美国','🇺🇸'],['CNY','China · RMB','中国 · 人民币','🇨🇳'],['MMK','Myanmar','缅甸','🇲🇲'],['THB','Thailand','泰国','🇹🇭'],['JPY','Japan','日本','🇯🇵'],['KRW','South Korea','韩国','🇰🇷'],['KPW','North Korea','朝鲜','🇰🇵'],['HKD','Hong Kong','香港','🇭🇰'],['MOP','Macao','澳门','🇲🇴'],['TWD','Taiwan','台湾','🇹🇼'],['SGD','Singapore','新加坡','🇸🇬'],['MYR','Malaysia','马来西亚','🇲🇾'],['IDR','Indonesia','印度尼西亚','🇮🇩'],['PHP','Philippines','菲律宾','🇵🇭'],['VND','Vietnam','越南','🇻🇳'],['LAK','Laos','老挝','🇱🇦'],['KHR','Cambodia','柬埔寨','🇰🇭'],['BND','Brunei','文莱','🇧🇳'],['TLS','Timor-Leste · USD','东帝汶 · 美元','🇹🇱'],['INR','India','印度','🇮🇳'],['PKR','Pakistan','巴基斯坦','🇵🇰'],['BDT','Bangladesh','孟加拉国','🇧🇩'],['LKR','Sri Lanka','斯里兰卡','🇱🇰'],['NPR','Nepal','尼泊尔','🇳🇵'],['BTN','Bhutan','不丹','🇧🇹'],['MVR','Maldives','马尔代夫','🇲🇻'],['AFN','Afghanistan','阿富汗','🇦🇫'],['MNT','Mongolia','蒙古','🇲🇳'],['KZT','Kazakhstan','哈萨克斯坦','🇰🇿'],['UZS','Uzbekistan','乌兹别克斯坦','🇺🇿'],['KGS','Kyrgyzstan','吉尔吉斯斯坦','🇰🇬'],['TJS','Tajikistan','塔吉克斯坦','🇹🇯'],['TMT','Turkmenistan','土库曼斯坦','🇹🇲'],['AED','United Arab Emirates','阿联酋','🇦🇪'],['SAR','Saudi Arabia','沙特阿拉伯','🇸🇦'],['QAR','Qatar','卡塔尔','🇶🇦'],['KWD','Kuwait','科威特','🇰🇼'],['BHD','Bahrain','巴林','🇧🇭'],['OMR','Oman','阿曼','🇴🇲'],['YER','Yemen','也门','🇾🇪'],['IRR','Iran','伊朗','🇮🇷'],['IQD','Iraq','伊拉克','🇮🇶'],['JOD','Jordan','约旦','🇯🇴'],['ILS','Israel / Palestine','以色列 / 巴勒斯坦','🇮🇱'],['LBP','Lebanon','黎巴嫩','🇱🇧'],['SYP','Syria','叙利亚','🇸🇾'],['TRY','Türkiye','土耳其','🇹🇷'],['AMD','Armenia','亚美尼亚','🇦🇲'],['AZN','Azerbaijan','阿塞拜疆','🇦🇿'],['GEL','Georgia','格鲁吉亚','🇬🇪'],['RUB','Russia','俄罗斯','🇷🇺'],['EUR','Cyprus · EUR','塞浦路斯 · 欧元','🇨🇾']];
-const $=id=>document.getElementById(id),base=$('asiaBaseV10'),list=$('asiaListV10'),status=$('asiaStatusV10'),refresh=$('asiaRefreshV10');const zh=()=>document.documentElement.lang.startsWith('zh')||document.body.dataset.lang==='zh'||(typeof lang!=='undefined'&&lang==='zh');const tr=(en,cn)=>zh()?cn:en;const name=e=>e[zh()?2:1];const code=e=>e[0]==='TLS'?'USD':e[0];const zones={Bangkok:'THB',Yangon:'MMK',Rangoon:'MMK',Shanghai:'CNY',Hong_Kong:'HKD',Taipei:'TWD',Tokyo:'JPY',Seoul:'KRW',Singapore:'SGD',Kuala_Lumpur:'MYR',Jakarta:'IDR',Manila:'PHP',Ho_Chi_Minh:'VND',Vientiane:'LAK',Phnom_Penh:'KHR',Kolkata:'INR',Calcutta:'INR',Dhaka:'BDT',Dubai:'AED',Riyadh:'SAR'};const local=zones[Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()]||'THB';let data=null,controller=null,timer=null,lastAttempt=0,error=false;const cacheKey='mmhvault-public-asia-fx-v10';
+const $=id=>document.getElementById(id),base=$('asiaBaseV10'),list=$('asiaListV10'),status=$('asiaStatusV10'),refresh=$('asiaRefreshV10');const zh=()=>document.documentElement.lang.startsWith('zh')||document.body.dataset.lang==='zh'||(typeof lang!=='undefined'&&lang==='zh');const tr=(en,cn)=>zh()?cn:en;const name=e=>e[zh()?2:1];const code=e=>e[0]==='TLS'?'USD':e[0];const zones={Bangkok:'THB',Yangon:'MMK',Rangoon:'MMK',Shanghai:'CNY',Hong_Kong:'HKD',Taipei:'TWD',Tokyo:'JPY',Seoul:'KRW',Singapore:'SGD',Kuala_Lumpur:'MYR',Jakarta:'IDR',Manila:'PHP',Ho_Chi_Minh:'VND',Vientiane:'LAK',Phnom_Penh:'KHR',Kolkata:'INR',Calcutta:'INR',Dhaka:'BDT',Dubai:'AED',Riyadh:'SAR'};const local=zones[Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()]||'THB';const basePreferenceKey='mmhvault_asia_reference_v920';const storedBase=(()=>{try{const v=localStorage.getItem(basePreferenceKey);return entries.some(e=>e[0]===v&&v!=='TLS')?v:''}catch(_){return ''}})();const saveBase=()=>{try{if(entries.some(e=>e[0]===base.value&&base.value!=='TLS'))localStorage.setItem(basePreferenceKey,base.value)}catch(_){}};let data=null,controller=null,timer=null,lastAttempt=0,error=false;const cacheKey='mmhvault-public-asia-fx-v10';
 const valid=d=>d&&d.result==='success'&&d.base_code==='USD'&&d.rates&&d.rates.USD===1&&Number.isFinite(d.time_last_update_unix)&&d.time_last_update_unix>0&&Number.isFinite(d.time_next_update_unix);
 try{const d=JSON.parse(localStorage.getItem(cacheKey));if(valid(d))data=d}catch(_){}
-function options(){const value=base.value||local;base.replaceChildren();for(const e of entries.filter(e=>e[0]!=='TLS')){const o=document.createElement('option');o.value=e[0];o.textContent=e[0]+' · '+name(e);base.append(o)}base.value=value;const quick=$('asiaQuickV10');quick.replaceChildren();for(const c of [...new Set([local,'USD','CNY','MMK'])]){const b=document.createElement('button');b.type='button';b.textContent=c==='CNY'?'RMB':c;b.setAttribute('aria-pressed',String(base.value===c));if(c===local)b.title=tr('Suggested from your device time zone; choose another currency above','按设备时区建议，可在上方更换货币');b.onclick=()=>{base.value=c;draw()};quick.append(b)}}
+function options(){const value=base.value||storedBase||local;base.replaceChildren();for(const e of entries.filter(e=>e[0]!=='TLS')){const o=document.createElement('option');o.value=e[0];o.textContent=e[0]+' · '+name(e);base.append(o)}base.value=value;const quick=$('asiaQuickV10');quick.replaceChildren();for(const c of [...new Set([local,'USD','CNY','MMK'])]){const b=document.createElement('button');b.type='button';b.textContent=c==='CNY'?'RMB':c;b.setAttribute('aria-pressed',String(base.value===c));if(c===local)b.title=tr('Suggested from your device time zone; choose another currency above','按设备时区建议，可在上方更换货币');b.onclick=()=>{base.value=c;saveBase();draw()};quick.append(b)}}
 function draw(){options();list.replaceChildren();const query=$('asiaSearchV10').value.toLowerCase().trim();const rows=entries.filter(e=>e.join(' ').toLowerCase().includes(query));for(const e of rows){const row=document.createElement('div');row.className='asia-row';const f=document.createElement('span');f.className='asia-flag';f.textContent=e[3];f.setAttribute('aria-hidden','true');const n=document.createElement('div');n.className='asia-name';const b=document.createElement('b');b.textContent=code(e)==='CNY'?'RMB · CNY':code(e);const small=document.createElement('small');small.textContent=name(e);n.append(b,small);const v=document.createElement('div');v.className='asia-value';const amount=document.createElement('strong');const r=data?.rates[code(e)],br=data?.rates[base.value];const available=Number.isFinite(r)&&r>0&&Number.isFinite(br)&&br>0;amount.textContent=available?new Intl.NumberFormat(zh()?'zh-CN':'en-US',{maximumSignificantDigits:7}).format(r/br):'—';const unit=document.createElement('small');unit.textContent=available?'1 '+(base.value==='CNY'?'RMB':base.value)+' = '+code(e):tr('Rate unavailable','暂无行情');v.append(amount,unit);row.append(f,n,v);list.append(row)}if(!rows.length){const p=document.createElement('p');p.textContent=tr('No matching currencies','没有匹配的货币');list.append(p)}status.textContent=data?(error?tr('Connection unavailable · showing cached reference rates. ','连接暂不可用 · 显示缓存参考行情。 '):'')+tr('Updated: ','更新时间：')+new Date(data.time_last_update_unix*1000).toLocaleString(zh()?'zh-CN':'en-US')+(Date.now()>data.time_next_update_unix*1000?tr(' · Update pending',' · 待更新'):''):tr(error?'Unable to load rates. Please try again later.':'Loading reference rates…',error?'无法获取行情，请稍后再试。':'正在获取参考行情…')}
 const exchangePage=document.getElementById('exchange');const active=()=>!document.hidden&&!!(exchangePage?.classList.contains('active')||root.classList.contains('active'));
 function stop(){clearTimeout(timer);timer=null;if(controller){controller.abort();controller=null}refresh.disabled=false}
 function schedule(){clearTimeout(timer);if(active())timer=setTimeout(()=>{load(false)},3600000)}
 async function load(manual){if(!active()||controller)return;if(lastAttempt&&Date.now()-lastAttempt<3600000){if(manual)status.textContent=tr('Rates update daily. Please allow one hour between requests.','行情每日更新，请间隔一小时后刷新。');schedule();return}if(!manual&&data&&Date.now()<data.time_next_update_unix*1000){draw();schedule();return}lastAttempt=Date.now();const ac=new AbortController();controller=ac;refresh.disabled=true;const timeout=setTimeout(()=>ac.abort(),12000);try{const res=await fetch('https://open.er-api.com/v6/latest/USD',{signal:ac.signal,cache:'no-store'});if(!res.ok)throw Error('HTTP');const d=await res.json();if(!valid(d))throw Error('Data');if(!active())return;data=d;error=false;try{localStorage.setItem(cacheKey,JSON.stringify(d))}catch(_){}draw()}catch(_){if(active()){error=true;draw()}}finally{clearTimeout(timeout);if(controller===ac){controller=null;refresh.disabled=false;schedule()}}}
-base.addEventListener('change',draw);$('asiaSearchV10').addEventListener('input',draw);refresh.onclick=()=>load(true);const syncActivity=()=>{if(active()){draw();load(false)}else stop()};window.addEventListener('mmhvault:page-visible',syncActivity,{passive:true});document.addEventListener('visibilitychange',()=>active()?load(false):stop());['mmhvault-language-change','languagechange'].forEach(name=>window.addEventListener(name,draw));window.addEventListener('pagehide',stop);draw();if(active())load(false);
+base.addEventListener('change',()=>{saveBase();draw()});$('asiaSearchV10').addEventListener('input',draw);refresh.onclick=()=>load(true);const syncActivity=()=>{if(active()){draw();load(false)}else stop()};window.addEventListener('mmhvault:page-visible',syncActivity,{passive:true});document.addEventListener('visibilitychange',()=>active()?load(false):stop());['mmhvault-language-change','languagechange'].forEach(name=>window.addEventListener(name,draw));window.addEventListener('pagehide',stop);draw();if(active())load(false);
 })();
 </script>
 <script id="mmhvault-asia-compact-v131-script">
@@ -33916,8 +33916,8 @@ html body.mmh-workspace-active #moreNavMenu .mmh-more-list-v153:focus-visible{ou
 <link rel="stylesheet" href="css/mmhvault-liquid-recurring-p912.css?v=9.12.0" data-mmh-recurring="p9.12">
 <link rel="stylesheet" href="css/mmhvault-liquid-unified-p913.css?v=9.13.0" data-mmh-unified="p9.13">
 
-<link rel="stylesheet" href="css/mmhvault-interactions-p914.css?v=9.15.0" data-mmh-unified="p9.14">
-<script src="js/mmhvault-interactions-p914.js?v=9.15.0" defer></script>
+<link rel="stylesheet" href="css/mmhvault-interactions-p914.css?v=9.20.0" data-mmh-unified="p9.14">
+<script src="js/mmhvault-interactions-p914.js?v=9.20.0" defer></script>
 
 <!-- P9.16: Future Asset Forecast liquid density, mobile cards, currency-menu stacking. -->
 <link rel="stylesheet" href="css/mmhvault-liquid-forecast-p916.css?v=9.16.0" data-mmh-forecast-refine="p9.16">
@@ -33993,6 +33993,183 @@ html body #exAsiaV10 #asiaBaseV10.mmh-asia-native-select-p914{display:none!impor
     grid-template-columns:1fr!important;
   }
 }
+</style>
+
+<!-- P9.20 · Asia currency rates: one centered picker, elegant liquid glass, compact responsive cards. -->
+<style id="mmhvault-p920-asia-glass">
+/* The previous selector is a data source; only the P9.14 button is visible when enhanced. */
+html body #exAsiaV10 .asia-controls #asiaBaseV10.mmh-asia-native-select-p914{display:none!important;}
+html body.mmh-workspace-active #exAsiaV10.ex-asia-page-v130{
+  min-width:0!important;max-width:1120px!important;box-sizing:border-box!important;
+  padding-top:12px!important;padding-bottom:30px!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .mmh-asia-command-p93{
+  position:relative;isolation:isolate;min-width:0;
+  padding:clamp(13px,1.9vw,23px)!important;
+  border:1px solid rgba(167,213,240,.38)!important;border-radius:22px!important;
+  background:radial-gradient(ellipse at 100% 0,rgba(238,190,95,.12),transparent 47%),
+    linear-gradient(138deg,rgba(47,96,130,.60),rgba(7,31,55,.73) 47%,rgba(5,23,44,.76))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.17),inset 1px 0 0 rgba(255,255,255,.045),0 17px 38px rgba(0,6,21,.21)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+  overflow:visible!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-page-top-v130{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  margin:0!important;padding:0 0 10px!important;min-height:0!important;
+  border:0!important;border-bottom:1px solid rgba(144,195,228,.19)!important;
+  background:transparent!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-page-top-v130>span{
+  font-size:10px!important;letter-spacing:.16em!important;color:#d5b87d!important;
+}
+html body.mmh-workspace-active #exAsiaV10 #asiaBackV130,
+html body.mmh-workspace-active #exAsiaV10 #asiaRefreshV10{
+  padding:9px 14px!important;min-height:39px!important;max-width:100%;
+  border:1px solid rgba(160,207,237,.40)!important;border-radius:11px!important;
+  color:#e6f4ff!important;background:linear-gradient(140deg,rgba(52,99,132,.53),rgba(5,33,55,.57))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.10)!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-head{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;
+  gap:10px!important;margin:0!important;padding:14px 0 16px!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;min-height:0!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-head h3{
+  font-size:clamp(22px,2.5vw,30px)!important;line-height:1.15!important;
+  letter-spacing:-.028em!important;color:#f3f8fe!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-head p{
+  font-size:12px!important;color:#a6c2d6!important;margin:5px 0 0!important;line-height:1.45!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-controls{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:clamp(10px,1.6vw,16px)!important;align-items:end!important;
+  min-width:0!important;margin:0!important;padding:14px!important;
+  border:1px solid rgba(144,195,228,.25)!important;border-radius:16px!important;
+  background:linear-gradient(130deg,rgba(111,170,206,.15),rgba(2,24,46,.38))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.08)!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-controls>.mmh-asia-picker-field-p914,
+html body.mmh-workspace-active #exAsiaV10 .asia-controls>label{
+  min-width:0!important;width:100%!important;display:flex!important;
+  flex-direction:column!important;justify-content:end!important;gap:7px!important;
+  margin:0!important;padding:0!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-controls :is(label,.mmh-asia-picker-field-p914)>span{
+  margin:0!important;font-size:11px!important;line-height:1.4!important;font-weight:700!important;
+  color:#b7d0e2!important;letter-spacing:.02em!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-controls :is(#asiaSearchV10,.mmh-asia-picker-trigger-p914){
+  width:100%!important;min-width:0!important;min-height:48px!important;height:48px!important;
+  box-sizing:border-box!important;padding:10px 15px!important;
+  font:inherit!important;font-size:16px!important;line-height:1.3!important;
+  border:1px solid rgba(153,204,238,.48)!important;border-radius:12px!important;
+  background:linear-gradient(130deg,rgba(57,108,146,.46),rgba(4,28,52,.79))!important;
+  color:#f3faff!important;box-shadow:inset 0 1px rgba(255,255,255,.12)!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-controls :is(#asiaSearchV10,.mmh-asia-picker-trigger-p914):focus-visible{
+  outline:2px solid #f7cf83!important;outline-offset:2px!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-quick{
+  display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+  margin:12px 0 0!important;padding:0!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-quick button{
+  min-width:52px!important;min-height:37px!important;padding:7px 12px!important;
+  border:1px solid rgba(138,192,226,.32)!important;border-radius:10px!important;
+  background:linear-gradient(120deg,rgba(55,103,133,.4),rgba(3,30,56,.61))!important;
+  color:#c3d8eb!important;box-shadow:inset 0 1px rgba(255,255,255,.08)!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-quick button[aria-pressed="true"]{
+  color:#ffe0a0!important;border-color:rgba(246,196,101,.78)!important;
+  background:linear-gradient(120deg,rgba(188,144,59,.46),rgba(19,55,78,.75))!important;
+}
+html body.mmh-workspace-active #exAsiaV10 #asiaStatusV10{
+  font-size:11px!important;color:#9cbdd5!important;margin:11px 0 0!important;
+  min-height:0!important;line-height:1.45!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-list{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:100%!important;max-height:none!important;overflow:visible!important;
+  gap:12px!important;margin:16px 0 0!important;padding:0!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-row{
+  min-width:0!important;min-height:79px!important;box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;gap:10px!important;
+  padding:14px!important;border-radius:15px!important;
+  border:1px solid rgba(135,191,225,.30)!important;
+  background:linear-gradient(136deg,rgba(46,96,129,.52),rgba(5,29,51,.74))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.1),0 9px 23px rgba(0,7,24,.14)!important;
+  -webkit-backdrop-filter:blur(15px) saturate(140%);backdrop-filter:blur(15px) saturate(140%);
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-flag{
+  flex:0 0 36px!important;width:36px!important;height:36px!important;
+  display:grid!important;place-items:center!important;
+  border:1px solid rgba(153,202,234,.28)!important;border-radius:11px!important;
+  background:rgba(129,180,220,.14)!important;font-size:20px!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-name{min-width:0!important;overflow-wrap:anywhere!important;}
+html body.mmh-workspace-active #exAsiaV10 .asia-name b{font-size:13px!important;line-height:1.3!important;color:#eef7ff!important;}
+html body.mmh-workspace-active #exAsiaV10 .asia-value{min-width:0!important;max-width:49%!important;overflow-wrap:anywhere!important;}
+html body.mmh-workspace-active #exAsiaV10 .asia-value strong{font-size:clamp(13px,1.4vw,17px)!important;letter-spacing:-.025em!important;}
+html body.mmh-workspace-active #exAsiaV10 .asia-value small{font-size:10px!important;line-height:1.3!important;}
+html body.mmh-workspace-active #exAsiaV10 .asia-disclaimer{font-size:11px!important;line-height:1.6!important;}
+/* Dialog is portaled into body (not positioned against the page or scrolled ancestor). */
+html body .mmh-asia-picker-dialog-p914[open]{
+  position:fixed!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+  margin:auto!important;transform:none!important;
+  width:min(500px,calc(100vw - 28px))!important;
+  height:min(620px,calc(100dvh - 48px))!important;
+  max-height:calc(100dvh - 48px)!important;
+  border:1px solid rgba(171,213,238,.57)!important;border-radius:20px!important;
+  background:radial-gradient(ellipse at 100% 0,rgba(242,189,84,.12),transparent 54%),
+    linear-gradient(138deg,rgba(44,96,132,.96),rgba(8,39,67,.99) 52%,rgba(3,22,41,.99))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.21),0 28px 80px rgba(0,6,22,.58)!important;
+}
+html body .mmh-asia-picker-dialog-p914 .mmh-asia-picker-options-p914{
+  min-height:0!important;flex:1 1 auto!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+}
+html body .mmh-asia-picker-dialog-p914 .mmh-asia-picker-option-p914{
+  border:1px solid rgba(138,190,227,.12)!important;
+  background:linear-gradient(125deg,rgba(89,151,189,.13),rgba(3,29,49,.20))!important;
+}
+html body .mmh-asia-picker-dialog-p914 .mmh-asia-picker-option-p914[aria-pressed="true"]{
+  border-color:rgba(245,201,113,.7)!important;
+  background:linear-gradient(110deg,rgba(226,177,77,.28),rgba(26,76,108,.63))!important;
+}
+@media(min-width:701px) and (max-width:1099px){
+  html body.mmh-workspace-active #exAsiaV10 .asia-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media(max-width:700px){
+  html body.mmh-workspace-active #exAsiaV10.ex-asia-page-v130{max-width:100%!important;padding:8px 0 26px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .mmh-asia-command-p93{padding:13px!important;border-radius:17px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-head{gap:8px!important;padding:12px 0!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-head h3{font-size:21px!important;}
+  html body.mmh-workspace-active #exAsiaV10 #asiaRefreshV10{min-width:78px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-controls{grid-template-columns:minmax(0,1fr)!important;padding:12px!important;gap:12px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-list{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-row{padding:11px 12px!important;min-height:68px!important;}
+  html body.mmh-workspace-active #exAsiaV10 .asia-value strong{font-size:16px!important;}
+  html body .mmh-asia-picker-dialog-p914[open]{width:calc(100vw - 20px)!important;height:min(590px,calc(100dvh - 36px))!important;max-height:calc(100dvh - 36px)!important;}
+}
+/* Enforce equal fields even when the old Exchange grid selector has two IDs. */
+html body.mmh-workspace-active #exchange.page.active #exAsiaV10 .asia-controls,
+html body.mmh-workspace-active main.wrap > #exAsiaV10.ex-asia-page-v130 .asia-controls{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+html body.mmh-workspace-active #exAsiaV10 .asia-head>div{min-width:0!important;flex:1 1 230px!important;}
+html body.mmh-workspace-active #exAsiaV10 #asiaRefreshV10,
+html body.mmh-workspace-active #exchange.page.active #exAsiaV10 #asiaRefreshV10{
+  width:auto!important;min-width:78px!important;max-width:max-content!important;flex:0 0 auto!important;margin-left:auto!important;
+}
+@media(max-width:700px){
+  html body.mmh-workspace-active #exchange.page.active #exAsiaV10 .asia-controls,
+  html body.mmh-workspace-active main.wrap > #exAsiaV10.ex-asia-page-v130 .asia-controls{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  html body.mmh-workspace-active #exAsiaV10 .asia-head>div{flex:1 1 194px!important;}
+}
+@media(prefers-reduced-motion:reduce){html body .mmh-asia-picker-dialog-p914 *{transition:none!important;animation:none!important}}
 </style>
 </body>
 </html>
