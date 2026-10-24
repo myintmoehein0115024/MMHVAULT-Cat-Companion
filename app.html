@@ -34383,5 +34383,116 @@ html body.mmh-workspace-active #exchange.page.active>.panel .toolbar h2{
 }
 @media(prefers-reduced-motion:reduce){html body.mmh-workspace-active #exchange.page.active *{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
 </style>
+<!-- MMHVAULT P9.22 | Unified shell + centered glass dialogs; view-only, no business logic. -->
+<style id="mmhvault-p922-shell-dialog-regression">
+/* Shell geometry: never let a page-specific grid dictate the persistent navigation size. */
+html body.mmh-workspace-active #header,
+html body.mmh-workspace-active #bottomNav.bottom-nav,
+html body.mmh-workspace-active main.wrap{box-sizing:border-box!important}
+html body.mmh-workspace-active main.wrap{
+  min-width:0!important;
+}
+html body.mmh-workspace-active main.wrap > section.page.active{
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+@media(min-width:1100px){
+  html body.mmh-workspace-active #bottomNav.bottom-nav{
+    min-height:100vh!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    flex-shrink:0!important;
+  }
+  html body.mmh-workspace-active #header{
+    min-width:0!important;
+    max-width:calc(100vw - 218px)!important;
+    overflow:visible!important;
+  }
+  html body.mmh-workspace-active #header .mmh-finance-topbar-v500,
+  html body.mmh-workspace-active #header .mmh-global-search-v500,
+  html body.mmh-workspace-active #header .header-profile{
+    min-width:0;
+    box-sizing:border-box!important;
+  }
+}
+@media(max-width:1099px){
+  html body.mmh-workspace-active #bottomNav.bottom-nav{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:stretch!important;
+    box-sizing:border-box!important;
+  }
+  html body.mmh-workspace-active #bottomNav.bottom-nav > button{
+    min-width:0!important;
+    max-width:100%!important;
+    flex:0 1 auto!important;
+  }
+  html body.mmh-workspace-active #header{max-width:100vw!important;min-width:0!important}
+  html body.mmh-workspace-active main.wrap > section.page.active{
+    overflow-wrap:break-word;
+  }
+}
+/* Centralized MMHVAULT dialogs: keep existing handlers, scrolling and action semantics. */
+#mmhVaultDialogV449{
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+}
+#mmhVaultDialogV449 .mmh-v449-dialog{
+  min-width:0!important;
+  box-sizing:border-box!important;
+  max-height:min(88dvh,820px)!important;
+  border-radius:20px!important;
+  border:1px solid rgba(143,197,235,.35)!important;
+  background:linear-gradient(142deg,rgba(36,70,95,.94),rgba(8,26,43,.975) 48%,rgba(3,17,32,.99))!important;
+  box-shadow:0 32px 85px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.10)!important;
+  backdrop-filter:blur(22px) saturate(126%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(126%)!important;
+}
+#mmhVaultDialogV449 .mmh-v449-dialog-body{
+  min-height:0!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+}
+/* Older generic confirmations were docked to the bottom on phones. Center only those
+   dialogs; keep the long transaction editor's dedicated scroll/fixed actions intact. */
+@media(max-width:699px){
+  html body .modal-backdrop.open:not(#editModal){
+    align-items:center!important;
+    justify-content:center!important;
+    padding:max(12px,env(safe-area-inset-top,0px)) 12px max(12px,env(safe-area-inset-bottom,0px))!important;
+  }
+  html body .modal-backdrop.open:not(#editModal) > .modal{
+    width:min(100%,540px)!important;
+    max-height:min(88dvh,750px)!important;
+    margin:auto!important;
+    border-radius:18px!important;
+    background:linear-gradient(144deg,rgba(35,66,89,.96),rgba(6,24,42,.985))!important;
+    backdrop-filter:blur(18px) saturate(125%)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(125%)!important;
+    overflow:auto!important;
+  }
+  #mmhVaultDialogV449{
+    align-items:center!important;
+    justify-content:center!important;
+    padding:max(12px,env(safe-area-inset-top,0px)) 12px max(12px,env(safe-area-inset-bottom,0px))!important;
+  }
+  #mmhVaultDialogV449 .mmh-v449-dialog{
+    width:min(100%,560px)!important;
+    max-width:100%!important;
+    max-height:min(88dvh,780px)!important;
+    border-radius:18px!important;
+  }
+  #mmhVaultDialogV449 .mmh-v449-dialog-actions{box-sizing:border-box!important;min-width:0!important}
+}
+@media(max-width:380px){
+  #mmhVaultDialogV449 .mmh-v449-dialog-actions{gap:7px!important;padding-inline:12px!important}
+  #mmhVaultDialogV449 .mmh-v449-dialog-actions > button{min-width:0!important;overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){
+  #mmhVaultDialogV449 .mmh-v449-dialog,
+  .modal-backdrop.open > .modal{animation:none!important;transition:none!important}
+}
+</style>
 </body>
 </html>
