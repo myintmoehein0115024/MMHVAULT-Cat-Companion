@@ -34493,6 +34493,20 @@ html body.mmh-workspace-active main.wrap > section.page.active{
   #mmhVaultDialogV449 .mmh-v449-dialog,
   .modal-backdrop.open > .modal{animation:none!important;transition:none!important}
 }
+
+/* P9.23 scoped compact-dialog polish */
+@media(max-width:699px){
+ html body .modal-backdrop.open:not(#editModal) > .modal,
+ #mmhVaultDialogV449 .mmh-v449-dialog{max-height:min(88dvh,calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px))!important;scrollbar-gutter:stable}
+ html body .modal-backdrop.open:not(#editModal) :is(input,select,textarea),
+ #mmhVaultDialogV449 :is(input,select,textarea){min-width:0;max-width:100%;font-size:max(16px,1em)}
+}
+@media(max-width:380px){
+ #mmhVaultDialogV449 .mmh-v449-dialog-actions{flex-wrap:wrap!important}
+ #mmhVaultDialogV449 .mmh-v449-dialog-actions > button{flex:1 1 110px;white-space:normal!important}
+}
+#mmhVaultDialogV449 :is(button,input,select,textarea):focus-visible,
+html body .modal-backdrop.open :is(button,input,select,textarea):focus-visible{outline:2px solid #f1c66c!important;outline-offset:3px!important}
 </style>
 </body>
 </html>
